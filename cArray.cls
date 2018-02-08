@@ -11,7 +11,27 @@ Option Explicit
 Option Compare Text
 Option Base 0 'DEFAULT
 
+'THIS IS WHERE THE ARRAY IS STORED. PUBLIC, SO IT CAN BE RETREIVED AND USED NORMALLY.
 Public pArray As Variant
+
+
+'TODO:
+' - ADD MORE ERROR HANDLING. ESPECIALLY FOR ENSURING SINGLE DIMENSIONAL ARRAYS ONLY
+' - ADD MORE FUNCTIONS THAT ARE COMMON WITH OTHER PROGRAMMING LANGUAGES.
+
+'Properties:
+' - value
+' - lenght
+
+'Funtions:
+' - push
+' - pop
+' - shift
+' - unshift
+' - map
+' - concat
+' - sort
+' - reverse
 
 '********************************************************************
 ' INITIALIZE
@@ -34,32 +54,32 @@ End Sub
 '********************************************************************
 'MAIN PROPERTY (USED TO GET OR LET THE VALUE OF AN INDEX.)
 'Attribute Value.VB_UserMemId = 0' SET IT AS THE DEFAULT PROPERTY (MUST IMPORT CLASS TO WORK)
-Public Property Let Value(index As Long, Element As Variant)
+Public Property Let Value(Index As Long, Element As Variant)
     
-    If UBound(pArray, 1) < index Then
+    If UBound(pArray, 1) < Index Then
         push Element
     Else
-        pArray(index) = Element
+        pArray(Index) = Element
     End If
     
 End Property
-Public Property Get Value(index As Long) As Variant
+Public Property Get Value(Index As Long) As Variant
 Attribute Value.VB_UserMemId = 0
-    Value = pArray(index)
+    Value = pArray(Index)
 End Property
 
 'THE LENGTH PROPERTY IS ALWAYS ONE MORE THAN THE HIGHEST ARRAY INDEX.
-Public Property Get length() As Long
-    length = UBound(pArray) + 1
+Public Property Get Length() As Long
+    Length = UBound(pArray) + 1
 End Property
 
 '********************************************************************
 ' MAIN FUNCTIONS
 '********************************************************************
 'CONVERTS AN ARRAY TO A STRING OF (COMMA SEPARATED) ARRAY VALUES
-Public Function toString() As String
+Public Function ToString() As String
     
-    toString = VBA.Join(pArray, ",")
+    ToString = VBA.Join(pArray, ",")
     
 End Function
 
@@ -195,8 +215,32 @@ Public Sub sort()
     'Converting ArrayList to an array
     'so now a sorted array of elements is stored in the array sorted_array.
     
-    pArray = Arr.toarray
+    pArray = Arr.ToArray
 
+End Sub
+
+'REVERSE ARRAY (CAN BE USED AFTER SORT TO GET THE DECENDING ORDER)
+Public Sub reverse()
+    
+    Dim temp As Variant
+    Dim I As Integer
+    
+    'REVERSE LOOP (HALF OF IT, WILL WORK FROM BOTH SIDES ON EACH ITERATION)
+    For I = LBound(pArray, 1) To UBound(pArray, 1) / 2
+        
+        'STORE LAST VALUE MINUS THE ITERATION
+        temp = pArray(UBound(pArray) - I)
+        
+        'SET LAST VALUE TO FIRST VALUE OF THE ARRAY
+        pArray(UBound(pArray) - I) = pArray(I)
+        
+        'SET FIRST VALUE TO THE STORED LAST VALUE
+        pArray(I) = temp
+        
+    Next I
+    
+Next I
+    
 End Sub
 
 'EMPTY THE ARRAY
@@ -205,8 +249,9 @@ Public Sub EmptyAndRedim()
     ReDim pArray(0)
 End Sub
 
+'TODO:
+' - NEED TO CREATE FUNCTIONS BELOW
 
-' END OF WORKING CODE!!!!!
 '**********************************************************************
 ' NEED TO CREATE FUNCTIONS BELOW. PRIVATE UNTIL THEY ARE FINISHED
 '**********************************************************************
@@ -237,5 +282,26 @@ End Sub
 Private Function slice(sliceStart As Integer, Optional sliceEnd As Integer)
 
 End Function
+
+Private Function filter() As Variant
+    
+End Function
+
+'RETURNS TRUE IF ANY ELEMENT MATCHES
+Private Function some() As Boolean
+    
+End Function
+
+'RETURNS THE LAST INSTANCE OF AN ELEMENT
+Private Function lastIndexOf(Element As Variant) As Long
+    
+End Function
+
+'RETURNS THE FIRST INSTANCE OF AN ELEMENT
+Private Function IndexOf(Element As Variant) As Long
+    
+End Function
+
+
 
 
