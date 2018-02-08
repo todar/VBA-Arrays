@@ -5,7 +5,7 @@ Custom Arrays in class module, that have similar functions as JavaScript. Exampl
 - value
 - lenght
 
-# Funtions:
+# Funtions/Methods:
 - push
 - pop
 - shift
@@ -14,6 +14,9 @@ Custom Arrays in class module, that have similar functions as JavaScript. Exampl
 - concat
 - sort
 - reverse
+- toString
+- join
+- emptyAndRedim
 
 # Usage
 
