@@ -11,6 +11,7 @@ Custom Arrays in class module, that have similar functions as JavaScript. Exampl
 - shift
 - unshift
 - map
+- forEach
 - concat
 - sort
 - reverse
