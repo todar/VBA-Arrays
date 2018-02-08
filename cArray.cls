@@ -32,6 +32,8 @@ Public pArray As Variant
 ' - concat
 ' - sort
 ' - reverse
+' - toString
+' - join
 
 '********************************************************************
 ' INITIALIZE
@@ -56,16 +58,26 @@ End Sub
 'Attribute Value.VB_UserMemId = 0' SET IT AS THE DEFAULT PROPERTY (MUST IMPORT CLASS TO WORK)
 Public Property Let Value(Index As Long, Element As Variant)
     
+    'INDEX DOESN'T EXIST, PUSH ITEM TO THE END
     If UBound(pArray, 1) < Index Then
         push Element
+        
+    'USE SET IF AN OBJECT
+    ElseIf IsObject(Element) Then
+        Set pArray(Index) = Element
+        
+    'REGULAR LET
     Else
         pArray(Index) = Element
     End If
     
 End Property
 Public Property Get Value(Index As Long) As Variant
-Attribute Value.VB_UserMemId = 0
-    Value = pArray(Index)
+    If IsObject(pArray(Index)) Then
+        Set Value = pArray(Index)
+    Else
+        Value = pArray(Index)
+    End If
 End Property
 
 'THE LENGTH PROPERTY IS ALWAYS ONE MORE THAN THE HIGHEST ARRAY INDEX.
@@ -77,16 +89,18 @@ End Property
 ' MAIN FUNCTIONS
 '********************************************************************
 'CONVERTS AN ARRAY TO A STRING OF (COMMA SEPARATED) ARRAY VALUES
-Public Function ToString() As String
+Public Function toString() As String
     
-    ToString = VBA.Join(pArray, ",")
-    
+    On Error Resume Next
+    toString = VBA.join(pArray, ",")
+
 End Function
 
 'IT BEHAVES JUST LIKE TOSTRING(), BUT IN ADDITION YOU CAN SPECIFY THE SEPARATOR (VBA CODE)
-Public Function Join(Delimiter As String) As String
+Public Function join(Delimiter As String) As String
     
-    Join = VBA.Join(pArray, Delimiter)
+    On Error Resume Next
+    join = VBA.join(pArray, Delimiter)
     
 End Function
 
@@ -99,13 +113,21 @@ Public Function pop() As Variant
 End Function
 
 'ADDS A NEW ELEMENT TO AN ARRAY (AT THE END), RETURNS THE NEW ARRAY LENGTH
-Public Function push(Element) As Variant
+Public Function push(Element As Variant) As Long
     
+    'INCREASE UBOUND IF ARRAY IS NOT EMPTY
     If pArray(0) <> Empty Then
         ReDim Preserve pArray(UBound(pArray, 1) + 1)
     End If
     
-    pArray(UBound(pArray, 1)) = Element
+    'CHECK TO SEE IF IT IS AN OBJECT
+    If IsObject(Element) = True Then
+       Set pArray(UBound(pArray, 1)) = Element
+    Else
+        pArray(UBound(pArray, 1)) = Element
+    End If
+    
+    'RETURN NEW ARRAY LENGTH
     push = UBound(pArray, 1) + 1
     
 End Function
@@ -121,7 +143,13 @@ Public Function shift() As Variant
     ReDim Arr(LBound(pArray, 1) To UBound(pArray, 1) - 1)
     
     For I = LBound(pArray, 1) + 1 To UBound(pArray, 1)
-        Arr(I - 1) = pArray(I)
+        
+        If IsObject(pArray(I)) Then
+            Set Arr(I - 1) = pArray(I)
+        Else
+            Arr(I - 1) = pArray(I)
+        End If
+        
     Next I
     
     pArray = Arr
@@ -142,7 +170,11 @@ Public Function unshift(Element) As Long
     Arr(LBound(Arr, 1)) = Element
     
     For I = LBound(pArray, 1) To UBound(pArray, 1)
-        Arr(I + 1) = pArray(I)
+        If IsObject(pArray(I)) Then
+            Set Arr(I + 1) = pArray(I)
+        Else
+            Arr(I + 1) = pArray(I)
+        End If
     Next I
 
     pArray = Arr
@@ -159,15 +191,42 @@ Public Function concat(Arr) As Variant
 
     For I = LBound(Arr, 1) To UBound(Arr, 1)
         ReDim Preserve pArr(UBound(pArr, 1) + 1)
-        pArr(UBound(pArr, 1)) = Arr(I)
+        If IsObject(Arr(I)) Then
+            Set pArr(UBound(pArr, 1)) = Arr(I)
+        Else
+            pArr(UBound(pArr, 1)) = Arr(I)
+        End If
+        
+        
     Next I
     
     concat = pArr
     
 End Function
 
+Public Function forEach(macroName As String, Optional WorkbookName As String)
+    
+    Dim I As Integer
+    Dim Temp As String
+    
+    If WorkbookName = "" Then
+        WorkbookName = ThisWorkbook.Name
+    End If
+        
+        WorkbookName = "'" & WorkbookName & "'"
+        
+    Temp = WorkbookName & "!" & macroName
+    
+    For I = LBound(pArray, 1) To UBound(pArray, 1)
+        Application.Run Temp, pArray(I)
+    Next I
+    
+
+End Function
+
+
 'LOOPS THROUGH EACH ELEMENT, RUNNINGS EXCELS EVALUATE FUNCTION FROM THE FORMULA STRING
-Public Function Map(Formula As String) As Variant
+Public Function map(Formula As String) As Variant
     
     Dim I As Integer
     Dim Arr As Variant
@@ -177,6 +236,8 @@ Public Function Map(Formula As String) As Variant
     
     For I = LBound(Arr, 1) To UBound(Arr, 1)
         
+        If IsObject(Arr(I)) Then GoTo Nxt
+        
         If TypeName(Arr(I)) = "String" Then Arr(I) = """" & Arr(I) & """"
         If InStr(Formula, "{}") > 0 Then
             S = Replace(Formula, "{}", Arr(I))
@@ -185,10 +246,10 @@ Public Function Map(Formula As String) As Variant
         End If
         
         Arr(I) = Evaluate(S)
-        
+Nxt:
     Next I
     
-    Map = Arr
+    map = Arr
     
 End Function
 
@@ -204,11 +265,13 @@ Public Sub sort()
     'Creating a array list
     Set Arr = CreateObject("System.Collections.ArrayList")
     
+    
     ' adding the elements in the array to array_list
     For Each Element In pArray
         Arr.Add Element
     Next
     
+    On Error GoTo Catch
     'sorting happens
     Arr.sort
     
@@ -216,35 +279,49 @@ Public Sub sort()
     'so now a sorted array of elements is stored in the array sorted_array.
     
     pArray = Arr.ToArray
+    
+Catch:
 
 End Sub
 
 'REVERSE ARRAY (CAN BE USED AFTER SORT TO GET THE DECENDING ORDER)
 Public Sub reverse()
     
-    Dim temp As Variant
+    Dim Temp As Variant
     Dim I As Integer
     
     'REVERSE LOOP (HALF OF IT, WILL WORK FROM BOTH SIDES ON EACH ITERATION)
     For I = LBound(pArray, 1) To UBound(pArray, 1) / 2
         
         'STORE LAST VALUE MINUS THE ITERATION
-        temp = pArray(UBound(pArray) - I)
+        If IsObject(pArray(UBound(pArray) - I)) Then
+            Set Temp = pArray(UBound(pArray) - I)
+        Else
+            Temp = pArray(UBound(pArray) - I)
+        End If
         
         'SET LAST VALUE TO FIRST VALUE OF THE ARRAY
-        pArray(UBound(pArray) - I) = pArray(I)
+        If IsObject(pArray(I)) Then
+            Set pArray(UBound(pArray) - I) = pArray(I)
+        Else
+            pArray(UBound(pArray) - I) = pArray(I)
+        End If
         
         'SET FIRST VALUE TO THE STORED LAST VALUE
-        pArray(I) = temp
+        If IsObject(Temp) Then
+            Set pArray(I) = Temp
+        Else
+             pArray(I) = Temp
+        End If
         
     Next I
     
-Next I
+
     
 End Sub
 
 'EMPTY THE ARRAY
-Public Sub EmptyAndRedim()
+Public Sub emptyAndRedim()
     pArray = Empty
     ReDim pArray(0)
 End Sub
@@ -301,6 +378,10 @@ End Function
 Private Function IndexOf(Element As Variant) As Long
     
 End Function
+
+
+
+
 
 
 
