@@ -1,6 +1,20 @@
 # VBA-Arrays
 Custom Arrays in class module, that have similar functions as JavaScript. Example: Push, Pop, Shift, Unshift, Sort, map, length, concat,  toString.
 
+# PROPERTIES
+- value
+- lenght
+
+# Funtions:
+- push
+- pop
+- shift
+- unshift
+- map
+- concat
+- sort
+- reverse
+
 # Usage
 
 Below is a test module, that shows some of the functions, and how to work with them.
@@ -67,6 +81,10 @@ Private Sub testClassArrays()
     'YOU CAN ALSO SORT
     A.sort
     Debug.Print A.toString
+    
+    'REVERSING THE ARRAY WILL GIVE YOU DECENDING ORDER
+    A.reverse
+    Debug.Print A.ToString
     
     ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
     ' MAPPING WILL USE EXCELS EVALUATE FUNCTION, TO TAKE A STRING AND DO
