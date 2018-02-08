@@ -110,9 +110,18 @@ Private Sub testClassArrays()
     
     Debug.Print A.Join(", ")
     
+    'FOR EACH LOOPS THROUGH AND CALLS A FUNCTION. A WAY OF DOING A CALLBACK FUNCTION. (NOT SUGGESTED FOR LARGE ARRAYS)
+    A.forEach "ArrayForEach"
     
 End Sub
 
+
+'SUB TESTING forEach. Note, this is not the most effective way of looping arrays. Mostly used for on the spot coding..
+Public Sub ArrayForEach(Element As Variant)
+
+    Debug.Print Element Is TypeName(Element)
+    
+End Sub
 
 
 ```
