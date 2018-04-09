@@ -13,37 +13,46 @@ Option Compare Text
 
 Private pArray As Variant
 
+'DEPENDENCIES
+' - must import file for Property Value to be set as the class default
+
 'Properties:
-' - value ^
+' - value
 ' - lenght
 
 'Public Funtions:
-' - push ^
-' - pop ^
+' - push
+' - pop
 ' - shift
 ' - unshift
-' - filter ^
+' - filter
 ' - map
-' - concat
-' - sort
-' - reverse
-' - toString ^
-' - join
-' - columnNumber ^
-' - getColumn ^
+' - forEach
+' - concat *
+' - sort @TODO - UPDATE FOR MULTI DIM ARRAYS
+' - reverse @TODO - UPDATE FOR MULTI DIM ARRAYS
+' - toString
+' - toRange
+' - columnNumber
+' - extractColumn
 
 'Private Helper Funtions:
-' - asign ^
-' - incrementIfNeeded ^
-' - collectionToMultiDimArray ^
-' - dimensionLength ^
-' - isSingleDimension ^
-' - arrayFromCollection ^
+' - arrayFromCollection
+' - asign
+' - collectionToMultiDimArray
+' - collectionFromarray
+' - dimensionLength
+' - isSingleDimension
 
 
-'********************************************************************
+'NOTES:
+' - THIS AN ARRAY OBJECT THAT CAN EASILY ADD\REMOVE ITEMS TO A SINGLE DIM ARRAY.
+' ALSO HAS VARIOUS FILTER AND SORT FUNCTIONS FOR MULTI DIM ARRAYS
+'
+
+'******************************************************************************
 ' EVENTS
-'********************************************************************
+'******************************************************************************
 Private Sub Class_Initialize()
     
     'ALLOWCATE ARRAY
@@ -58,56 +67,161 @@ Private Sub Class_Terminate()
 End Sub
 
 
-'********************************************************************
+'******************************************************************************
 ' PUBLIC PROPERTIES
-'********************************************************************
-Public Property Let value(Arr As Variant)
+'******************************************************************************
+Public Property Let value(Optional Index As Variant = -1, Arr As Variant)
 Attribute value.VB_UserMemId = 0
     
-    If IsArray(Arr) Then
+    If Index > -1 Then
+        
+        If Index >= Me.Length Then
+            push Arr
+        Else
+            asign pArray(Index), Arr
+        End If
+        
+    ElseIf IsArray(Arr) Then
+    
         pArray = Arr
+
     Else
         On Error Resume Next
         If Arr = Empty Then
-            pArray = Empty
+            ReDim pArray(0)
         End If
     End If
     
 End Property
-Public Property Get value() As Variant
-
-    value = pArray
+Public Property Get value(Optional Index As Variant = -1) As Variant
+    
+    If Index > -1 Then
+        asign value, pArray(Index)
+    Else
+        asign value, pArray
+    End If
     
 End Property
 
+Public Property Get Length() As Long
+    Length = UBound(pArray, 1) + 1
+End Property
+
+Public Property Get lowerBound(Optional bounds As Integer = 1) As Variant
+    lowerBound = LBound(pArray, bounds)
+End Property
+
+Public Property Get upperBound(Optional bounds As Integer = 1) As Variant
+    upperBound = UBound(pArray, bounds)
+End Property
 
 
-'*****************************************************************************
+'******************************************************************************
 ' PUBLIC METHODS\FUNCTIONS
-'*****************************************************************************
+'******************************************************************************
 
 ' - ADDS A NEW ELEMENT TO AN ARRAY (AT THE END), RETURNS THE NEW ARRAY LENGTH
 Public Function push(Element As Variant) As Long
-
+    
+    'FOR NOW THIS IS ONLY FOR SINGLE DIMENSIONS. @TODO: UPDATE TO PUSH TO MULTI DIM ARRAYS
+    If Not isSingleDimension Then
+        push = -1
+        Exit Function
+    End If
+    
     'INCREASE UBOUND IF ARRAY IS NOT EMPTY
-    incrementIfNeeded
+    If pArray(0) <> Empty Then
+        ReDim Preserve pArray(UBound(pArray, 1) + 1)
+    End If
     
-    'ASGIN USING LET OR SET
+    'ADD ELEMENT TO THE END OF THE ARRAY
     asign pArray(UBound(pArray, 1)), Element
-    
+
     'RETURN NEW ARRAY LENGTH
     push = UBound(pArray, 1) + 1
     
 End Function
 
-' @Check - Currently just works for single dimension
 ' - REMOVES LAST ELEMENT FROM ARRAY, RETURNS REMOVED ELEMENT
 Public Function pop() As Variant
     
-    pop = pArray(UBound(pArray, 1))
+    'FOR NOW THIS IS ONLY FOR SINGLE DIMENSIONS. @TODO: UPDATE TO PUSH TO MULTI DIM ARRAYS
+    If Not isSingleDimension Then
+        pop = -1
+        Exit Function
+    End If
+    
+    'RETURN ELEMENT THAT IS REMOVED
+    asign pop, pArray(UBound(pArray, 1))
+    
+    'REMOVE LAST ELEMENT FROM ARRAY
     ReDim Preserve pArray(UBound(pArray, 1) - 1)
     
 End Function
+
+' - ADDS NEW ELEMENT TO THE BEGINING OF THE COLLECTION
+Public Function unShift(Element As Variant) As Long
+    
+    Dim i As Long
+    Dim Temp As Variant
+    
+    'FOR NOW THIS IS ONLY FOR SINGLE DIMENSIONS. @TODO: UPDATE TO PUSH TO MULTI DIM ARRAYS
+    If Not isSingleDimension Then
+        unShift = -1
+        Exit Function
+    End If
+    
+    'RETURN THE NEW LENGTH OF THE ARRAY
+    unShift = UBound(pArray, 1) + 1
+    
+    'RESIZE TEMP ARRAY TO PLUS ONE
+    ReDim Temp(LBound(pArray, 1) To UBound(pArray, 1) + 1)
+    
+    'ADD NEW ELEMENT TO TEMP
+    asign Temp(LBound(Temp, 1)), Element
+    
+    'ADD ELEMENTS FROM ARRAY TO TEMP
+    For i = LBound(pArray, 1) To UBound(pArray, 1)
+  
+        asign Temp(i + 1), pArray(i)
+
+    Next i
+    
+    'SET ARRAY TO TEMP ARRAY
+    pArray = Temp
+    
+End Function
+
+' - REMOVES FIRST ELEMENT FROM THE BEGINING OF THE COLLECTION
+Public Function shift() As Variant
+    
+    Dim i As Long
+    Dim Temp As Variant
+    
+    'FOR NOW THIS IS ONLY FOR SINGLE DIMENSIONS. @TODO: UPDATE TO PUSH TO MULTI DIM ARRAYS
+    If Not isSingleDimension Then
+        shift = -1
+        Exit Function
+    End If
+    
+    'RETURN ELEMENT THAT IS BEING REMOVED
+    shift = pArray(LBound(pArray, 1))
+    
+    'RESIZE TEMP ARRAY TO MINUS ONE
+    ReDim Temp(LBound(pArray, 1) To UBound(pArray, 1) - 1)
+    
+    'FILL TEMP ARRAY WITH REMAINING ARRAY ELEMENTS
+    For i = LBound(pArray, 1) + 1 To UBound(pArray, 1)
+        
+        asign Temp(i - 1), pArray(i)
+
+    Next i
+    
+    'SET ARRAY TO TEMP ARRAY
+    pArray = Temp
+    
+End Function
+
 
 ' - RETURNS A NEW ARRAY FILTERED BASED ON PARAMETERS
 Public Function filter(Match As Variant, Optional column As Variant = 1, Optional includeHeader As Boolean = True) As Variant
@@ -124,14 +238,17 @@ Public Function filter(Match As Variant, Optional column As Variant = 1, Optiona
     If Not IsNumeric(column) Then column = columnNumber(CStr(column))
     
     If isSingleDimension Then
-    
+        
         'VBA HAS FUNCTION ALREADY FOR SINGLE DIMENSION ARRAYS
         filter = VBA.filter(pArray, Match, , vbTextCompare)
     Else
         
         'LOOP EVERY ROW OF MULTIDIMINSION ARRAY IN PARAMETER COLUMN
         For i = LBound(pArray, 1) To UBound(pArray, 1)
-        
+            
+            
+            'Debug.Print Evaluate("""" & pArray(i, column) & """" & "= ""gregarious""")
+            
             'IF MATCH IS FOUND, GET STORE ROW DATA IN COLLECTION, ADD TO MAIN COLLECTION
             If (CStr(pArray(i, column)) = CStr(Match)) Or (includeHeader = True And i = LBound(pArray, 1)) Then
                 
@@ -157,7 +274,7 @@ Public Function filter(Match As Variant, Optional column As Variant = 1, Optiona
 End Function
 
 ' - RETURNS SINGLE COLUMN FROM MULTI DIMENSTION ARRAY
-Public Function getColumn(Name As String) As Variant
+Public Function extractColumn(Name As String) As Variant
     
     Dim i As Integer
     Dim Col As Integer
@@ -174,7 +291,7 @@ Public Function getColumn(Name As String) As Variant
         
     End If
     
-    getColumn = arrayFromCollection(List)
+    extractColumn = arrayFromCollection(List)
     
 End Function
 
@@ -194,7 +311,6 @@ Public Function columnNumber(Name As String) As Integer
     
 End Function
 
-
 ' - CONVERTS AN ARRAY TO A STRING OF (COMMA SEPARATED) ARRAY VALUES
 Public Function toString(Optional Delimiter As String = ",") As String
     
@@ -205,7 +321,7 @@ Public Function toString(Optional Delimiter As String = ",") As String
     
     On Error Resume Next
     If isSingleDimension Then
-  
+              
         For i = LBound(pArray, 1) To UBound(pArray, 1)
             If IsObject(pArray(i)) Then
                 toString = toString & "[" & TypeName(pArray(i)) & "]" & Delimiter
@@ -240,11 +356,137 @@ Public Function toString(Optional Delimiter As String = ",") As String
 
 End Function
 
+Public Function forEach(macroName As String, Optional WorkbookName As String)
+    
+    Dim i As Integer
+    Dim Temp As String
+    
+    If WorkbookName = "" Then
+        WorkbookName = ThisWorkbook.Name
+    End If
+        
+    WorkbookName = "'" & WorkbookName & "'"
+        
+    Temp = WorkbookName & "!" & macroName
+    
+    For i = LBound(pArray, 1) To UBound(pArray, 1)
+        Application.Run Temp, pArray(i)
+    Next i
+    
+
+End Function
+
+'LOOPS THROUGH EACH ELEMENT, RUNNINGS EXCELS EVALUATE FUNCTION FROM THE FORMULA STRING
+Public Function map(Formula As String, Optional Element As String = "${}") As Variant
+    
+    Dim i As Integer
+    Dim Arr As Variant
+    Dim S As String
+    
+    Arr = pArray
+    
+    For i = LBound(Arr, 1) To UBound(Arr, 1)
+        
+        If IsObject(Arr(i)) Then GoTo Nxt
+        
+        If TypeName(Arr(i)) = "String" Then Arr(i) = """" & Arr(i) & """"
+        If InStr(Formula, Element) > 0 Then
+            S = Replace(Formula, Element, Arr(i))
+        Else
+            S = S & Arr(i)
+        End If
+        
+        Arr(i) = Evaluate(S)
+Nxt:
+    Next i
+    
+    map = Arr
+    
+End Function
+
+'SORT THE ARRAY. NO RETURN, EFFECTS pArray
+Public Sub Sort()
+    
+    Dim i As Long
+    Dim j As Long
+    Dim Temp As Variant
+    
+    '@CHECK - DOES NOT SUPPORT OBJECTS - SKIP ON ERROR FOR NOW
+    On Error Resume Next
+    
+    'SORT THE ARRAY A-Z
+    For i = LBound(pArray) To UBound(pArray) - 1
+        For j = i + 1 To UBound(pArray)
+            If UCase(pArray(i)) > UCase(pArray(j)) Then
+                Temp = pArray(j)
+                pArray(j) = pArray(i)
+                pArray(i) = Temp
+            End If
+        Next j
+    Next i
+
+End Sub
+
+'REVERSE ARRAY (CAN BE USED AFTER SORT TO GET THE DECENDING ORDER)
+Public Sub reverse()
+    
+    Dim Temp As Variant
+    Dim i As Integer
+    
+    'REVERSE LOOP (HALF OF IT, WILL WORK FROM BOTH SIDES ON EACH ITERATION)
+    For i = LBound(pArray, 1) To ((UBound(pArray) - LBound(pArray)) \ 2)
+        
+        'STORE LAST VALUE MINUS THE ITERATION
+        asign Temp, pArray(UBound(pArray) - i)
+        
+        'SET LAST VALUE TO FIRST VALUE OF THE ARRAY
+        asign pArray(UBound(pArray) - i), pArray(i)
+        
+        'SET FIRST VALUE TO THE STORED LAST VALUE
+        asign pArray(i), Temp
+        
+    Next i
+    
+End Sub
 
 
-'********************************************************************
+
+'RETURN A NEW ARRAY, JOINS CURRENT ARRAY WITH ANOTHER ONE.
+Public Function concat(Arr) As Variant
+    
+    Dim i As Integer
+    Dim Temp As Variant
+    
+    Temp = pArray
+    
+    For i = LBound(Arr, 1) To UBound(Arr, 1)
+        
+        ReDim Preserve Temp(UBound(Temp, 1) + 1)
+        asign Temp(UBound(Temp, 1)), Arr(i)
+   
+    Next i
+    
+    concat = Temp
+    
+End Function
+
+
+
+Public Sub toRange(target As Range)
+    
+    If isSingleDimension Then
+        Set target = target.Resize(UBound(pArray), 1)
+        target.value = Application.Transpose(pArray)
+    Else
+        target.Resize(UBound(pArray, 1) + 1, UBound(pArray, 2) + 1).value = pArray
+    End If
+End Sub
+
+
+'******************************************************************************
 ' PRIVATE METHODS\FUNCTIONS         (HELPER FUNCTIONS)
-'********************************************************************
+'******************************************************************************
+
 
 Private Function collectionToMultiDimArray(C As Collection) As Variant
     
@@ -270,7 +512,7 @@ End Function
 Private Function arrayFromCollection(Col As Collection) As Variant
     
     Dim Arr As Variant
-    Dim i As Integer
+    Dim i As Long
     
     ReDim Arr(0 To Col.Count - 1)
     
@@ -279,6 +521,19 @@ Private Function arrayFromCollection(Col As Collection) As Variant
     Next i
     
     arrayFromCollection = Arr
+    
+End Function
+
+Private Function collectionFromarray(Arr As Variant) As Collection
+    
+    Dim Col As New Collection
+    Dim i As Integer
+    
+    For i = LBound(Arr, 1) To UBound(Arr, 1)
+        Col.Add Arr(i)
+    Next i
+    
+    Set collectionFromarray = Col
     
 End Function
 
@@ -293,19 +548,11 @@ Private Function asign(Arr As Variant, Val As Variant)
     
 End Function
 
-Private Function incrementIfNeeded()
-    
-    'INCREASE UBOUND IF ARRAY IS NOT EMPTY
-    If pArray(0) <> Empty Then '@Check - This is limited to single dimension
-        ReDim Preserve pArray(UBound(pArray, 1) + 1)
-    End If
-
-End Function
-
 Private Function isSingleDimension() As Boolean
     If dimensionLength(pArray) = 1 Then isSingleDimension = True
 End Function
 
+' - RETURNS THE LENGHT OF THE DIMENSION OF AN ARRAY
 Private Function dimensionLength(Arr As Variant) As Integer
     
     Dim i As Integer
@@ -320,6 +567,10 @@ Private Function dimensionLength(Arr As Variant) As Integer
     dimensionLength = i - 1
 
 End Function
+
+
+
+
 
 
 
