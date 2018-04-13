@@ -3,10 +3,6 @@ Custom Arrays in class module, that have similar functions as JavaScript. Exampl
 
 *Currently working on a version that has support for multi dim arrays!! Adding funtions to query & sort them. If interested, check it out!!
 
-# DEPENDENCIES
-- must import file for Property Value to be set as the class default.
-- no extra refrences to other libriaries needed at this time.
-
 # Properties:
 - value
 - lenght
@@ -40,6 +36,9 @@ Custom Arrays in class module, that have similar functions as JavaScript. Exampl
 - sqlArray
 
 # Usage
+
+Must import file for Property Value to be set as the class default.
+No extra refrences to other libriaries needed at this time.
 
 Below is a test module, that shows some of the functions, and how to work with them.
 
