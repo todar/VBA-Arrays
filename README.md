@@ -1,25 +1,43 @@
 # VBA-Arrays
 Custom Arrays in class module, that have similar functions as JavaScript. Example: Push, Pop, Shift, Unshift, Sort, map, length, concat,  toString.
 
-*Currently working on a version that has support for multi dim arrays!! Will add funtions to filter & sort for them. 
+*Currently working on a version that has support for multi dim arrays!! Adding funtions to query & sort them. If interested, check it out!!
 
-# Properties
-- value
-- lenght
+'DEPENDENCIES
+' - must import file for Property Value to be set as the class default.
+' - no extra refrences to other libriaries needed at this time.
 
-# Funtions/Methods:
-- push
-- pop
-- shift
-- unshift
-- map
-- forEach
-- concat
-- sort
-- reverse
-- toString
-- join
-- emptyAndRedim
+# Properties:
+' - value
+' - lenght
+
+# Public Funtions:
+' - push
+' - pop
+' - shift
+' - unshift
+' - filter
+' - map
+' - forEach
+' - exists
+' - concat
+' - sort
+' - reverse
+' - toString
+' - toRange
+' - columnNumber
+' - returnColumn
+' - returnRow
+
+# Private Helper Funtions:
+' - arrayFromCollection
+' - asign
+' - collectionToMultiDimArray
+' - collectionFromarray
+' - dimensionLength
+' - isSingleDimension
+' - array2dUnshift
+' - sqlArray
 
 # Usage
 
