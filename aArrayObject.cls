@@ -15,6 +15,7 @@ Private pArray As Variant
 
 'DEPENDENCIES
 ' - must import file for Property Value to be set as the class default
+' - this was the orginal version
 
 'Properties:
 ' - value
