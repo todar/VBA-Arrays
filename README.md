@@ -15,6 +15,7 @@ Custom Arrays in class module, that have similar functions as JavaScript. Exampl
 - filter
 - map
 - forEach
+- reduce
 - exists
 - concat
 - sort
@@ -40,12 +41,12 @@ Custom Arrays in class module, that have similar functions as JavaScript. Exampl
 Must import file for Property Value to be set as the class default.
 No extra refrences to other libriaries needed at this time.
 
-Below is a test module, that shows some of the functions, and how to work with them.
+Below is a test module, that shows some of the functions, and how to work with them. (Orginal, need to add new arrayObject examples)
 
 ```vb
 '==============================================================================
 ' NOTES: CURRENTLY THIS CLASS IS IN THE EARLY DESIGN STAGES. TESTING IS STILL
-' GOING ON, AS WELL AS ADDING MORE FUNCTIONS.
+' GOING ON, AS WELL AS ADDING MORE FUNCTIONS. 
 '==============================================================================
 Private Sub testClassArrays()
   
