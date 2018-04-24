@@ -50,12 +50,10 @@ Below is a test module, that shows some of the functions, and how to work with t
 '==============================================================================
 Private Sub testClassArrays()
   
-    Dim A As New cArray
-    Dim standardArray As Variant 'USED FOR TESTING
-    
+    Dim A As New arrayObject
     
     'ADD VALUES TO END OF CLASS ARRAY
-    A.push "apple"
+    A.push "apple", "carrot"
     A.push "bannana"
     
     
@@ -81,25 +79,20 @@ Private Sub testClassArrays()
     A(A.length) = "apple" 'CAN FORCE A PUSH THIS WAY...
     
     
-    '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-    ' pArray IS THE ARRAY THAT IS STORED IN THE CLASS. IT IS PUBLIC,
-    ' SO THAT IT CAN BE ACCESSED AND MANIPULATED OR USED IN DIFF WAYS.
-    '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-    
-    'AT THIS POINT YOU ARE WORKING WITH A NORMAL ARRAY, SO LETS SET IT TO A VAR
-    standardArray = A.pArray
-    
-    'EMPTY OUR CLASS ARRAY, FOR TESTING WE WILL ADD ONE NEW ITEM
-    A.EmptyAndRedim
-    
-    A.push "carrot"
-    
     'CONCATE RETURNS THE CURRENT ARRAY JOINED WITH ANOTHER ARRAY.
-    'THIS EXAMPLE WILL SET THE pArray = TO CLASS ARRAY JOINED WITH THE STANDARD ARRAY
-    A.pArray = A.concat(standardArray)
+    A = A.concat(Array("Bacon", "Tuna", "Apple"))
     
+    'SPLICE CAN OPTIONALLY INSERT ELEMENTS AT ANY INDEX, CAN ALSO OPTIONALLY REMOVE ELEMENTS FROM THAT SPOT
+    A.splice 1, 1, "Lemon", "Kiwi"  'ADDS AT THE 1ST INDEX (BY DEFAULT BASE 0) AND REMOVES 1 ELEMENT
+    A.splice 3, 2    'REMOVES TWO ITEMS AT THE 3RD INDEX (BY DEFAULT BASE 0)
     
-    'toString WILL RETURN THE ARRAY JOINED WITH COMMAS
+    'YOU CAN REMOVE DUPLICATES (CURRENTLY ONLY WORKS ON 1D ARRAY)
+    a.removeDuplicates
+    
+    'CHECK IF AN ELEMENT EXISTS
+    Debug.Print A.exists("apple")
+    
+    'toString WILL RETURN THE ARRAY JOINED WITH COMMAS (Optionaly you can set the delimeter)
     Debug.Print A.toString
     
     'YOU CAN ALSO SORT
@@ -111,37 +104,39 @@ Private Sub testClassArrays()
     Debug.Print A.ToString
     
     ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    ' NOTE: THESE FUNCTIONS BELOW ARE NOT AS EFFICIENT AS LOOPING, JUST MORE CONVENIENT
+    '
     ' MAPPING WILL USE EXCELS EVALUATE FUNCTION, TO TAKE A STRING AND DO
     ' BASIC FORMULAS TO EACH ITEM IN THE ARRAY, AND RETURN A NEW ARRAY.
-    ' EXAMPLE BELOW IS UPPER CASE EACH ITEM. NOTE: {} IS WHERE THE ELEMENT WILL GO.
+    ' EXAMPLE BELOW IS UPPER CASE EACH ITEM. 
+    ' NOTE: ${} IS WHERE THE ELEMENT WILL GO. YOU CAN PASS IN A DIFFERENT KEY AS WELL.
     ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-    A.pArray = A.Map("upper({})")
+    A = A.Map("upper(${})")
+    Debug.Print A.toString(", ")
     
-    'LETS SEE THE RESULTS USING THE JOIN FUNCTION. (RUNS VBA JOIN FUNCTION)
-    Debug.Print A.Join(", ")
+    'FOR EACH IS THE SAME AS MAP, HOWEVER IT MANIPULATES THE ORIGINAL ARRAY. DOESN'T RETURN ANYTHING
+    A.forEach("${} & "" are good!""")
+    Debug.Print A.toString(", ")
     
     'EXAMPLES WITH NUMBERS
-    A.EmptyAndRedim
-    A.push 1
-    A.push 2
-    A.push 3
+    A = empty
+    A.push 1, 2, 3, 4
     
-    A.pArray = A.Map("SUM(2 * {})")
+    A.forEach("SUM(2 * ${})")
+    Debug.Print A.toString(", ")
     
-    Debug.Print A.Join(", ")
+    'REDUCE USES X AS EACH ELEMENT, AND Y AS THE ACCUMILATION. YOU CAN USE IT TO DO THING SUCH AS ADD EACH ELEMENT TOGETHER.
+    A.reduce "X + Y"
     
-    'FOR EACH LOOPS THROUGH AND CALLS A FUNCTION. A WAY OF DOING A CALLBACK FUNCTION. (NOT SUGGESTED FOR LARGE ARRAYS)
-    A.forEach "ArrayForEach"
+    'YOU CAN FILTER ON YOUR ARRAY
+    A.filter "X > 10"
     
-End Sub
-
-
-'SUB TESTING forEach. Note, this is not the most effective way of looping arrays. Mostly used for on the spot coding..
-Public Sub ArrayForEach(Element As Variant)
-
-    Debug.Print Element Is TypeName(Element)
+    'NOTE: NEED TO ADD EXAMPLES OF THE TOOLS USED FOR 2D ARRAYS!!
     
 End Sub
+
+
+
 
 
 ```
