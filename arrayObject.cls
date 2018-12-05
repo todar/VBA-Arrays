@@ -22,49 +22,69 @@ Private Const optionBase As Integer = 0 'SET TO EITHER 0 OR 1
 ' - value
 ' - lenght
 
-'Public Funtions:
+'Functions:
+
+'ADDING OR REMOVING FUNCTIONS
 ' - push
 ' - pop
 ' - shift
 ' - unshift
+' - splice
+
+'LOOPING FUNCTIONS
 ' - filter
 ' - map
 ' - forEach
-' - exists
 ' - reduce
+
+'BASIC OPERATIONS
+' - exists
 ' - concat
 ' - sort
 ' - reverse
 ' - toString
 ' - toRange
+' - removeDuplicates
+
+'2D ARRAY SPECIFIC
 ' - columnNumber
-' - splice
-' - returnColumn
+' - getColumn
 ' - getRow
+' - query
+' - getArrayFromRecordset
+' - Transpose
 
 'Private Helper Funtions:
 ' - arrayFromCollection
+' - ArrayToTextFile
 ' - asign
 ' - collectionToMultiDimArray
 ' - collectionFromarray
 ' - dimensionLength
 ' - isSingleDimension
 ' - array2dUnshift
-' - sqlArray
 ' - IsArrayEmpty
+
+
 
 'NOTES:
 ' - THIS AN ARRAY OBJECT THAT CAN EASILY ADD\REMOVE ITEMS TO A SINGLE DIM ARRAY.
 ' - ALSO HAS VARIOUS FILTER AND SORT FUNCTIONS FOR MULTI DIM ARRAYS
 
 'TODO:
+' - VALUE IS NOT ORGANIZED WELL FOR RETRIEVING FROM THE ARRAY. SOLUTIONS??
 ' - REVERSE: NEED OPTION TO NOT REVERSE HEADINGS
 ' - ADD FUNCTIONS: removeDuplicates, slice, indexOf, lastIndexOf
 ' - CLEAN CODE IN: [reduce, filter, map, forEach]
-' - query was an experiment, still working on it. Need to finalize.
 ' - NEED TO CONVERT FROM SINGLE DIM ONLY TO 2DIM:
 '   [VALUE, PUSH, SHIFT, UNSHIFT, SORT, REVERSE, CONCAT, EXISTS]
 '   NOT SURE TO MAKE 2D: [SPLICE, MAP, REDUCE, FOREACH, FILTER]
+
+'EXAMPLES:
+' - https://github.com/todar/VBA-Arrays
+
+'@AUTHOR: ROBERT TODAR
+'@LICENCE: MIT
 
 
 '******************************************************************************************
@@ -73,7 +93,7 @@ Private Const optionBase As Integer = 0 'SET TO EITHER 0 OR 1
 Private Sub Class_Initialize()
     
     'ALLOWCATE ARRAY
-    'ReDim pArray(optionBase)
+    'ReDim pArray(optionBase) 'NO LONGER IN USE
     
 End Sub
 Private Sub Class_Terminate()
@@ -89,62 +109,63 @@ End Sub
 '******************************************************************************************
 
 ' - VALUE IS TO GET AND SET THE ARRAY. IT IS SET BY DEFAULT WHEN CLASS IS IMPORTED.
-Public Property Let Value(Optional index As Variant = -1, Optional index2 As Variant = -1, Arr As Variant)
+Public Property Let value(Optional index As Variant = -1, Optional index2 As Variant = -1, arr As Variant)
 Attribute Value.VB_UserMemId = 0
-    
+
     'IF SPECIFIC INDEX IS PASSED IN
     If index > -1 Then
-        
+
         'IF INDEX IS LARGER THAN THE UBOUND, THEN PUSH THE ITEM TO THE END
-        If index >= Me.Length Then
-            push Arr
-            
+        If index >= Me.length Then
+            push arr
+
         'OTHERWISE, REPLACE THAT INDEXES ELEMENT
         Else
-            asign pArray(index), Arr
+            asign pArray(index), arr
         End If
-    
+
     'IF NOT A SINGLE ITEM, CHECK TO SEE IF ARRAY WAS PASSED IN
-    ElseIf IsArray(Arr) Then
-    
-        pArray = Arr
-    
+    ElseIf IsArray(arr) Then
+
+        pArray = arr
+
     'OTHERWISE CHECK TO SEE IF ARRAY WAS SET TO EMPTY
     Else
-        On Error Resume Next
-        If Arr = Empty Then
+        'On Error Resume Next
+        If arr = Empty Then
             pArray = Empty
-            'ReDim pArray(optionBase)
         End If
     End If
-    
+
 End Property
-Public Property Get Value(Optional index As Variant = -1, Optional index2 As Variant = -1) As Variant
-    
+Public Property Get value(Optional index As Variant = -1, Optional index2 As Variant = -1) As Variant
+
     'IF INDEX IS PASSED, RETURN ELEMENT, OTHERWISE RETURN ARRAY
     If index > -1 Then
-        asign Value, pArray(index)
+        asign value, pArray(index)
     Else
-        asign Value, pArray
+        value = pArray
     End If
-    
+
 End Property
 
+
+
 ' - LENGTH IS THE NUMBER OF ELEMENTS
-Public Property Get Length() As Long
+Public Property Get length() As Long
     
     On Error Resume Next
-    Length = (UBound(pArray, 1) + 1) - optionBase
+    length = (UBound(pArray, 1) + 1) - optionBase
     
 End Property
 
 ' - HELPER BOUND PROPERITES
-Public Property Get lowerBound(Optional bounds As Integer = 1) As Variant
+Public Property Get lowerBound(Optional bounds As Variant = 1) As Variant
 
     lowerBound = LBound(pArray, bounds)
     
 End Property
-Public Property Get upperBound(Optional bounds As Integer = 1) As Variant
+Public Property Get upperBound(Optional bounds As Variant = 1) As Variant
 
     upperBound = UBound(pArray, bounds)
     
@@ -191,7 +212,7 @@ Public Function push(ParamArray Element() As Variant) As Long
     Next index
     
     'RETURN NEW ARRAY LENGTH
-    push = Length
+    push = length
 
 End Function
 
@@ -214,12 +235,12 @@ Public Function pop() As Variant
     
     Else
         'RETURN LAST ROW OF 2D ARRAY THAT IS REMOVED
-        pop = getRow(UBound(pArray, 1))
+        pop = GetRow(UBound(pArray, 1))
         
         'REMOVE LAST ROW FROM 2D ARRAY (CAN ONLY CHANGE 2ND DIM, TRANSPOSE TWICE TO REMOVE LAST ROW)
-        pArray = Application.Transpose(pArray)
+        pArray = transpose(pArray)
         ReDim Preserve pArray(LBound(pArray, 1) To (UBound(pArray, 1)), LBound(pArray, 2) To UBound(pArray, 2) - 1)
-        pArray = Application.Transpose(pArray)
+        pArray = transpose(pArray)
         
     End If
     
@@ -266,12 +287,12 @@ Public Function unShift(ParamArray Element() As Variant) As Long
     pArray = temp
     
     'RETURN THE NEW LENGTH OF THE ARRAY
-    unShift = Me.Length
+    unShift = Me.length
     
 End Function
 
 
-' - REMOVES FIRST ELEMENT FROM THE BEGINING OF THE COLLECTION
+' - REMOVES FIRST ELEMENT FROM THE BEGINING OF THE ARRAY
 Public Function Shift() As Variant
     
     Dim i As Long
@@ -304,15 +325,45 @@ End Function
 
 ' - RETURNS A NEW ARRAY QUERIED BASED ON PARAMETERS
 Public Function query(sql As String) As Variant
-
-    If Not isSingleDimension Then
-
-        'CALL TO PRIVATE HELPER FUNCTION
-        query = sqlArray(pArray, sql)
-
-    End If
-
+    
+    'GET DATA FROM PRIVATE ARRAY
+    Dim arr As Variant
+    arr = pArray
+    
+    'CREATE TEMP FOLDER AND FILE NAMES
+    Const fileName As String = "temp.txt"
+    Dim filePath As String
+    filePath = Environ("temp")
+    
+    'UPDATE SQL WITH TEMP FILE NAME
+    sql = Replace(sql, "FROM []", "FROM [" & fileName & "]")
+    
+    'SEND ARRAY TO TEMP TEXTFILE
+    ArrayToTextFile filePath & "\" & fileName
+    
+    'CREATE CONNECTION TO TEMP FILE
+    Dim cnn As ADODB.Connection
+    Set cnn = New ADODB.Connection
+    cnn.Provider = "Microsoft.Jet.OLEDB.4.0"
+    cnn.ConnectionString = "Data Source=" & filePath & ";" & "Extended Properties=""text;HDR=Yes;FMT=Delimited;"""
+    cnn.Open
+    
+    'CREATE RECORDSET FROM SQL ON TEMP FILE
+    Dim rs As ADODB.Recordset
+    Set rs = New ADODB.Recordset
+    With rs
+        .ActiveConnection = cnn
+        .Open sql
+        query = getArrayFromRecordset(rs)
+        .Close
+    End With
+    
+    'CLOSE CONNECTION AND KILL TEMP FILE
+    cnn.Close
+    Kill filePath & "\" & fileName
+    
 End Function
+
 
 'WILL BE USED TO ADD NEW ITEMS TO AN ARRAY, AS WELL AS REMOVE ITEMS FROM THAT LOCATION
 Public Sub splice(Where As Long, howManyRemoved As Integer, ParamArray Element() As Variant)
@@ -320,7 +371,7 @@ Public Sub splice(Where As Long, howManyRemoved As Integer, ParamArray Element()
     Dim i As Long
     Dim i2 As Long
     Dim i3 As Long
-    Dim Arr As Variant
+    Dim arr As Variant
     Dim visited As Boolean
     
     'CHECK TO SEE THAT INSERT IS NOT GREATER THAN THE ARRAY (REDUCE IF SO)
@@ -334,10 +385,10 @@ Public Sub splice(Where As Long, howManyRemoved As Integer, ParamArray Element()
     End If
     
     'SET BOUNDS TO TEMP ARRAY
-    ReDim Arr(LBound(pArray, 1) To UBound(pArray, 1) + UBound(Element, 1) + 1 - howManyRemoved)
+    ReDim arr(LBound(pArray, 1) To UBound(pArray, 1) + UBound(Element, 1) + 1 - howManyRemoved)
     
     'LOOP TEMP ARRAY, ADDING\REMOVING WHERE NEEDED
-    For i = LBound(Arr, 1) To UBound(Arr, 1)
+    For i = LBound(arr, 1) To UBound(arr, 1)
         
         'INSERT ONCE AT WHERE, AND ONLY VISIT ONCE
         If i = Where And visited = False Then
@@ -346,7 +397,7 @@ Public Sub splice(Where As Long, howManyRemoved As Integer, ParamArray Element()
             
             'ADD NEW ELEMENTS
             For i2 = LBound(Element, 1) To UBound(Element, 1)
-                Arr(i) = Element(i2)
+                arr(i) = Element(i2)
                 
                 'INCREMENT COUNTERS
                 i3 = i3 + 1
@@ -359,21 +410,21 @@ Public Sub splice(Where As Long, howManyRemoved As Integer, ParamArray Element()
         
         Else
             'ADD PREVIOUS ELEMENTS (I3 IS A HELPER)
-            Arr(i) = pArray(i - i3)
+            arr(i) = pArray(i - i3)
         End If
         
     Next i
     
-    pArray = Arr
+    pArray = arr
     
 End Sub
 
-Public Function getRow(index As Variant) As Variant
+Public Function GetRow(index As Variant) As Variant
 
     'RETURN AS A 2-DIMENSIONAL ARRAY, SO THAT IT CAN BE CONCATINATED IF NEEDED
 
     Dim i As Integer
-    Dim Col As Integer
+    Dim col As Integer
     Dim temp As Variant
 
     'MUST BE MULTI DIMENSIONED ARRAY
@@ -389,40 +440,40 @@ Public Function getRow(index As Variant) As Variant
     End If
 
     'RETURN COLUMN
-    getRow = temp
+    GetRow = temp
 
 End Function
 
 ' - RETURNS SINGLE COLUMN FROM MULTI DIMENSTIONAL ARRAY
-Public Function returnColumn(name As String) As Variant
+Public Function GetColumn(name As String) As Variant
 
     Dim i As Integer
-    Dim Col As Integer
+    Dim col As Integer
     Dim temp As Variant
 
     'MUST BE MULTI DIMENSIONED ARRAY
     If Not isSingleDimension Then
 
         'GET COLUMN NUMBER USING FUNCTION
-        Col = columnNumber(name)
+        col = ColumnNumber(name)
 
         'REDIM TEMP ARR AND SET EQUAL TO COLUMN
-        ReDim temp(UBound(pArray, 1))
-
+        ReDim temp(LBound(pArray, 1) To UBound(pArray, 1))
+      
         For i = LBound(pArray, 1) To UBound(pArray, 1)
-            temp(i) = pArray(i, Col)
+            temp(i) = pArray(i, col)
         Next i
 
     End If
 
     'RETURN COLUMN
-    returnColumn = temp
+    GetColumn = temp
 
 End Function
 
 
 ' - RETURNS COLUMN NUMBER FROM A MULTIDIM ARRAY
-Public Function columnNumber(name As String) As Integer
+Public Function ColumnNumber(name As String) As Integer
 
     Dim i As Integer
 
@@ -434,7 +485,7 @@ Public Function columnNumber(name As String) As Integer
 
             'IF MATCH FOUND, RETURN THAT COLUMN NUMBER
             If pArray(LBound(pArray, 1), i) Like name Then
-                columnNumber = i
+                ColumnNumber = i
                 Exit Function
             End If
 
@@ -444,14 +495,14 @@ Public Function columnNumber(name As String) As Integer
 End Function
 
 ' - CONVERTS AN ARRAY TO A STRING OF (COMMA SEPARATED) ARRAY VALUES
-Public Function toString(Optional Delimiter As String = ",") As String
+Public Function toString(Optional delimiter As String = ",") As String
     
     Dim i As Long 'long in case there are many rows
     Dim i2 As Integer
-    Dim Arr As Variant
+    Dim arr As Variant
     Dim s As String
     
-    On Error Resume Next
+    'On Error Resume Next
     If isSingleDimension Then
            
         'SINGLE DIMENSION ARRAYS
@@ -459,18 +510,16 @@ Public Function toString(Optional Delimiter As String = ",") As String
         
             'OBJECTS WILL PRINT OUT THEIR TYPE, EXAMPLE: [DICTIONARY]
             If IsObject(pArray(i)) Then
-                toString = toString & "[" & TypeName(pArray(i)) & "]" & Delimiter
+                toString = toString & "[" & TypeName(pArray(i)) & "]" & delimiter
             
             'NON-OBJECTS
             Else
-                toString = toString & pArray(i) & Delimiter
+                toString = toString & pArray(i) & delimiter
             End If
             
-            'ADD NEW LINE FOR NEXT ELEMENT
-            'toString = toString & vbNewLine
         Next i
         
-        toString = Left(toString, Len(toString) - Len(Delimiter))
+        toString = Left(toString, Len(toString) - Len(delimiter))
         
     Else
     
@@ -482,11 +531,11 @@ Public Function toString(Optional Delimiter As String = ",") As String
                 
                 'OBJECTS WILL PRINT OUT THEIR TYPE, EXAMPLE: [DICTIONARY]
                 If IsObject(pArray(i, i2)) Then
-                    toString = toString & "[" & TypeName(pArray(i, i2)) & "]" & Delimiter
+                    toString = toString & "[" & TypeName(pArray(i, i2)) & "]" & delimiter
                 
                 'NON-OBJECTS
                 Else
-                    toString = toString & pArray(i, i2) & Delimiter
+                    toString = toString & pArray(i, i2) & delimiter
                 End If
                 
             Next i2
@@ -500,13 +549,13 @@ Public Function toString(Optional Delimiter As String = ",") As String
 
 End Function
 
-Public Function exists(Value As Variant) As Boolean
+Public Function exists(value As Variant) As Boolean
     
     '@TODO: ADD ERROR HANDLING AND OPTION FOR 2D ARRAY
     Dim i As Long
     
     For i = LBound(pArray, 1) To UBound(pArray, 1)
-        If pArray(i) Like Value Then
+        If pArray(i) Like value Then
             exists = True
             Exit Function
         End If
@@ -528,21 +577,23 @@ Public Function map(Formula As String, Optional Condition As String, Optional El
     '@TODO: MAP, FOREACH, REDUCE, AND FILTER ARE ALL SIMILAR. ADD PRIVATE HELPER CODE TO REDUCE
     '       CODE DOWN, AS NOT TO REPEAT.
     Dim i As Long
-    Dim Arr As Variant
+    Dim arr As Variant
     Dim temp As String
     Dim s As String
     
-    Arr = pArray
+    arr = pArray
     
-    For i = LBound(Arr, 1) To UBound(Arr, 1)
+    For i = LBound(arr, 1) To UBound(arr, 1)
         
-        If IsObject(Arr(i)) Then GoTo Nxt
+        If IsObject(arr(i)) Then GoTo Nxt
         
         temp = pArray(i)
         If TypeName(temp) = "String" Then temp = """" & temp & """"
         
         s = Replace(Condition, Element, temp)
+        
         If s = "" Then s = True
+        
         If Evaluate(s) = True Then
         
             If InStr(Formula, Element) > 0 Then
@@ -551,14 +602,14 @@ Public Function map(Formula As String, Optional Condition As String, Optional El
                 s = s & temp
             End If
             
-            Arr(i) = Evaluate(s)
+            arr(i) = Evaluate(s)
   
         End If
        
 Nxt:
     Next i
     
-    map = Arr
+    map = arr
     
 End Function
 
@@ -631,7 +682,7 @@ Public Sub sort()
     Dim temp As Variant
     
     '@CHECK - DOES NOT SUPPORT OBJECTS - SKIP ON ERROR FOR NOW
-    On Error Resume Next
+    'On Error Resume Next
     
     'SORT THE ARRAY A-Z
     For i = LBound(pArray) To UBound(pArray) - 1
@@ -671,19 +722,19 @@ End Sub
 
 
 'RETURN A NEW ARRAY, JOINS CURRENT ARRAY WITH ANOTHER ONE.
-Public Function concat(Arr) As Variant
+Public Function concat(arr) As Variant
     
     Dim i As Long
     Dim temp As Variant
     
     temp = pArray
     
-    If dimensionLength(pArray) = dimensionLength(Arr) Then
+    If dimensionLength(pArray) = dimensionLength(arr) Then
     
-        For i = LBound(Arr, 1) To UBound(Arr, 1)
+        For i = LBound(arr, 1) To UBound(arr, 1)
         
             ReDim Preserve temp(UBound(temp, 1) + 1)
-            asign temp(UBound(temp, 1)), Arr(i)
+            asign temp(UBound(temp, 1)), arr(i)
     
         Next i
         
@@ -694,13 +745,20 @@ Public Function concat(Arr) As Variant
 End Function
 
 ' - RESIZE PASSED IN RANGE, AND SET VALUE EQUAL TO THE ARRAY
-Public Sub toRange(Target As Range)
+Public Sub toRange(Optional Target As Range)
+    
+    Dim wb As Workbook
+    
+    If Target Is Nothing Then
+        Set wb = Workbooks.Add
+        Set Target = wb.Worksheets("Sheet1").Range("A1")
+    End If
     
     If isSingleDimension Then
         Set Target = Target.Resize(UBound(pArray), 1)
-        Target.Value = Application.Transpose(pArray)
+        Target.value = Application.transpose(pArray)
     Else
-        Target.Resize(UBound(pArray, 1), UBound(pArray, 2)).Value = pArray
+        Target.Resize((UBound(pArray, 1) + 1) - LBound(pArray, 1), (UBound(pArray, 2) + 1 - LBound(pArray, 2))).value = pArray
     End If
     
     Columns.AutoFit
@@ -718,18 +776,53 @@ Public Sub removeDuplicates()
 End Sub
 
 
+Public Function getArrayFromRecordset(rs As Object) As Variant
+    
+    Dim headings As Variant
+    Dim field As Object
+    Dim index As Integer
+    Dim table As Variant
+    
+    ReDim headings(0 To rs.fields.Count - 1)
+    index = 0
+    
+    For Each field In rs.fields
+        headings(index) = field.name
+        index = index + 1
+    Next field
+    
+    table = rs.GetRows
+    table = transpose(table)
+    getArrayFromRecordset = array2dUnshift(headings, table)
+    
+End Function
+
 
 '******************************************************************************************
 ' PRIVATE METHODS\FUNCTIONS         (HELPER FUNCTIONS)
 '******************************************************************************************
 
+Private Sub ArrayToTextFile(filePath As String, Optional delimeter As String = ",")
+    
+    Dim fso As Object
+    Dim ts As Object
+    Dim s As String
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set ts = fso.OpenTextFile(filePath, 2, True) '2=WRITEABLE
+   
+    ts.Write toString(delimeter)
+    Set ts = Nothing
+
+End Sub
+
 ' - QUICK TOOL TO EITHER SET OR LET DEPENDING ON IF ELEMENT IS AN OBJECT
-Private Function asign(Arr As Variant, val As Variant)
+Private Function asign(arr As Variant, val As Variant)
 
     If IsObject(val) Then
-        Set Arr = val
+        Set arr = val
     Else
-        Let Arr = val
+        Let arr = val
     End If
     
 End Function
@@ -740,31 +833,48 @@ Private Function isSingleDimension() As Boolean
 End Function
 
 ' - RETURNS THE LENGHT OF THE DIMENSION OF AN ARRAY
-Private Function dimensionLength(Arr As Variant) As Integer
+Private Function dimensionLength(arr As Variant) As Integer
     
     Dim i As Integer
     Dim test As Long
-    Err.Clear
-    On Error Resume Next
+
+    On Error GoTo Catch
     Do
         i = i + 1
-        test = UBound(Arr, i)
-    Loop Until Err.Number <> 0
+        test = UBound(arr, i)
+    Loop
+    
+Catch:
     
     dimensionLength = i - 1
 
 End Function
 
+'Private Function dimensionLength(Arr As Variant) As Integer
+'
+'    Dim i As Integer
+'    Dim test As Long
+'    Err.Clear
+'    On Error Resume Next
+'    Do
+'        i = i + 1
+'        test = UBound(Arr, i)
+'    Loop Until Err.Number <> 0
+'
+'    dimensionLength = i - 1
+'
+'End Function
+
 ' - COLLECTION MUST BE STORE A COLLECTION OF ROW DATA
-Private Function collectionToMultiDimArray(C As Collection) As Variant
+Private Function collectionToMultiDimArray(c As Collection) As Variant
     
-    Dim Arr As Variant
+    Dim arr As Variant
     Dim i As Integer
     Dim i2 As Integer
     Dim LB As Integer
     Dim minus As Integer
     
-    On Error GoTo catch
+    On Error GoTo Catch
     
     'ADJUST VARAIABLES FOR OPTION BASE
     If optionBase = 0 Then
@@ -777,118 +887,71 @@ Private Function collectionToMultiDimArray(C As Collection) As Variant
     End If
     
     'REDIM ARR TO THE SIZE OF THE COLLECTION
-    ReDim Arr(LB To C.Count - minus, LB To C.item(1).Count - minus)
+    ReDim arr(LB To c.Count - minus, LB To c.item(1).Count - minus)
     
     'GET ARRAY FROM COLLECTION
-    For i = 1 To C.Count
-        For i2 = 1 To C.item(1).Count
-            asign Arr(i - minus, i2 - minus), C.item(i).item(i2)
+    For i = 1 To c.Count
+        For i2 = 1 To c.item(1).Count
+            asign arr(i - minus, i2 - minus), c.item(i).item(i2)
         Next i2
     Next i
     
-    collectionToMultiDimArray = Arr
+    collectionToMultiDimArray = arr
     
-catch: 'IF ERROR, THAT MEANS COLLECTION WAS EMPTY. RETURNS EMPTY
+Catch: 'IF ERROR, THAT MEANS COLLECTION WAS EMPTY. RETURNS EMPTY
     
 End Function
 
 ' - RETURN SINGLE DIMENSION ARRAY FROM COLLECTION (NOT IN USE CURRENTLY)
-Private Function arrayFromCollection(Col As Collection) As Variant
+Private Function arrayFromCollection(col As Collection) As Variant
     
-    Dim Arr As Variant
+    Dim arr As Variant
     Dim i As Long
     
-    ReDim Arr(0 To Col.Count - 1)
+    ReDim arr(0 To col.Count - 1)
     
-    For i = 1 To Col.Count
-        asign Arr(i - 1), Col(i)
+    For i = 1 To col.Count
+        asign arr(i - 1), col(i)
     Next i
     
-    arrayFromCollection = Arr
+    arrayFromCollection = arr
     
 End Function
 
 ' - RETURN COLLECTION FROM A SINGLE DIMENSTION ARRAY (NOT IN USE CURRENTLY)
-Private Function collectionFromarray(Arr As Variant) As Collection
+Private Function collectionFromarray(arr As Variant) As Collection
     
-    Dim Col As New Collection
+    Dim col As New Collection
     Dim i As Integer
     
-    For i = LBound(Arr, 1) To UBound(Arr, 1)
-        Col.Add Arr(i)
+    For i = LBound(arr, 1) To UBound(arr, 1)
+        col.Add arr(i)
     Next i
     
-    Set collectionFromarray = Col
+    Set collectionFromarray = col
     
 End Function
 
-Private Function sqlArray(Arr As Variant, sql As String) As Variant
+'VBA TRANSPOSE HAS A LIMIT ON THE SIZE OF THE ARRAY, AND IS LIMITED TO THE 1ST DIM
+Public Function transpose(arr As Variant) As Variant
+
+    Dim temp As Variant
+    Dim i As Long
+    Dim j As Long
+
+    ReDim temp(LBound(arr, 2) To UBound(arr, 2), LBound(arr, 1) To UBound(arr, 1))
+    For i = LBound(arr, 2) To UBound(arr, 2)
+        For j = LBound(arr, 1) To UBound(arr, 1)
+            temp(i, j) = arr(j, i)
+        Next
+    Next
     
-    Dim cn As Object
-    Dim rs As Object
-    Dim ws As Worksheet
-    Dim wb As Workbook
-    Dim fields As Variant
-    Dim data As Variant
-    Dim rng As Range
-    Dim connectionString As String
-    Dim i As Integer
-    
-    Set cn = CreateObject("ADODB.Connection")
-    Set rs = CreateObject("ADODB.Recordset")
-    
-    'CREATE WORKBOOK TO ACT AS THE TABLE TO QUERY FROM
-    Application.ScreenUpdating = False
-    Set wb = Workbooks.Add
-    Set ws = wb.Sheets(1)
-    
-    'ARRAY TO THE RANGE
-    Set rng = ws.Range("A1").Resize(UBound(Arr, 1), UBound(Arr, 2))
-    rng.Value = Arr
-    
-    'SAVE WORKBOOK TO TEMP FILE
-    Application.DisplayAlerts = False
-    wb.SaveAs Environ("TEMP") & "\" & "tempdb.xlsx", AccessMode:=xlExclusive, ConflictResolution:=Excel.XlSaveConflictResolution.xlLocalSessionChanges
-    Application.DisplayAlerts = True
-    
-    'CREATE CONNECTION STRING TO THE TEMP FILE
-    connectionString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & wb.FullName _
-        & ";Extended Properties=""Excel 12.0;HDR=Yes;IMEX=1"";"
-    
-    'OPEN CONNECTION TO THE TEMP FILE
-    cn.Open connectionString
-    
-    'CREATE THE SQL TO BE RUN ON DATA. CURRENTLY HARDCODED SELECT..\FROM..\'WHERE' STATEMENT
-    sql = "SELECT * FROM [" & ws.name & "$" & rng.Address(False, False) & "] WHERE " & sql
-    
-    On Error GoTo catch
-    'PULL DATA BY OPENING RECORDSET
-    rs.Open sql, cn
-    
-    'GET HEADINGS FROM RECORDSET
-    ReDim fields(LBound(Arr, 2) To UBound(Arr, 2))
-    
-    For i = LBound(Arr, 2) To UBound(Arr, 2)
-        fields(i) = Arr(LBound(Arr, 1), i)
-    Next i
-    
-    
-    'GET ROW DATA (RETURNS TRANSPOSED, SO RE-TRANSPOSE)
-    data = Application.WorksheetFunction.Transpose(rs.GetRows)
-    
-    'RECORDSET.GETROWS ARE TRANSPOSED. TRANSPOSE TO GET BACK TO DEFAULT TABLE STYLE
-    sqlArray = array2dUnshift(fields, data)
-    
-catch:
-    'CLOSE WB AND DELETE
-    wb.Close False
-    Application.ScreenUpdating = True
-    Kill Environ("TEMP") & "\" & "tempdb.xlsx"
+    transpose = temp
 
 End Function
 
 
-Private Function IsArrayEmpty(Arr As Variant) As Boolean
+Private Function IsArrayEmpty(arr As Variant) As Boolean
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ' IsArrayEmpty
 ' This function tests whether the array is empty (unallocated). Returns TRUE or FALSE.
@@ -906,14 +969,14 @@ Dim UB As Long
 
 Err.Clear
 On Error Resume Next
-If IsArray(Arr) = False Then
+If IsArray(arr) = False Then
     ' we weren't passed an array, return True
     IsArrayEmpty = True
 End If
 
 ' Attempt to get the UBound of the array. If the array is
 ' unallocated, an error will occur.
-UB = UBound(Arr, 1)
+UB = UBound(arr, 1)
 If (Err.Number <> 0) Then
     IsArrayEmpty = True
 Else
@@ -928,7 +991,7 @@ Else
     ' allocated.
     ''''''''''''''''''''''''''''''''''''''''''
     Err.Clear
-    LB = LBound(Arr)
+    LB = LBound(arr)
     If LB > UB Then
         IsArrayEmpty = True
     Else
@@ -980,21 +1043,21 @@ End Function
 Private Sub slice(startIndex As Long, endIndex As Long)
 
     Dim i As Long
-    Dim Arr As Variant
+    Dim arr As Variant
     
-    ReDim Arr(LBound(pArray, 1) To UBound(pArray, 1) + UBound(Element, 1) + 1 - howManyRemoved)
+    ReDim arr(LBound(pArray, 1) To UBound(pArray, 1) + UBound(Element, 1) + 1 - howManyRemoved)
     
-    For i = LBound(Arr, 1) To UBound(Arr, 1)
+    For i = LBound(arr, 1) To UBound(arr, 1)
         
         If i = Where Then
             
         Else
-            Arr(i) = pArray(i)
+            arr(i) = pArray(i)
         End If
         
     Next i
     
-    pArray = Arr
+    pArray = arr
     
 End Sub
 
