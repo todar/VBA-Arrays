@@ -4,6 +4,9 @@ Option Compare Text
 Option Private Module
 Option Base 0
 
+'ERROR CODES CONSTANTS
+Public Const ARRAY_NOT_PASSED_IN As Integer = 5000
+Public Const ARRAY_DIMENSION_INCORRECT As Integer = 5001
 
 '@AUTHOR: ROBERT TODAR
 
@@ -48,14 +51,16 @@ Option Base 0
 ' -
 
 'NOTES:
-' - I'VE CREATE AN ARRAY CLASS MODULE THAT DOES MANY OF THESE FUNCTIONS, DECIDED TO ALSO
-' - CREATE FUNCTIONS AWAY FROM CLASS MODULE OBJECT TO MAKE THEM WORK WITH ANY ARRAY.
+' -
 
 'TODO:
+' - CLEAN UP CODE! ADD MORE NOTES AND EXAMPLES.
+' - NEED TO REALLY TEST ALL OF THESE FUNCTIONS, CHECK FOR ERRORS.
+' - ADD MORE CUSTOM ERROR MESSAGES FOR SPECIFIC ERRORS.
+'
 ' - LOOK THROUGH FUNCTIONS DESIGNED FOR SINGLE DIM ARRAYS, SEE IF CAN CONVERT TO WORK
 '   WITH 2 DIM AS WELL
 '
-' - GO THROUGH AND FIND PLACES TO ADD PRIVATE HELPER FUNTION Assign
 ' - Create ArrayConcat function
 
 
@@ -102,7 +107,7 @@ Private Sub ArrayFunctionExamples()
 End Sub
 
 '******************************************************************************************
-' IN TESTING
+' TESTING SECTION  (REALLY ALL CODE NEEDS TO BE TESTED, BUT THESE ARE MUCH LESS PROVEN)
 '******************************************************************************************
 
 'TESTER SUB FOR NEW FUNCTIONS
@@ -116,8 +121,17 @@ Private Sub ArrayPlayground()
     
 End Sub
 
-'FILTER ARRAY ELEMENTS BASED ON REGEX PATTERN - USE https://regexr.com/ FOR HELP
+'FILTER SINGLE DIM ARRAY ELEMENTS BASED ON REGEX PATTERN
 Public Function ArrayFilter(ByVal SourceArray As Variant, ByVal RegExPattern As String) As Variant
+    
+    '@AUTHOR: ROBERT TODAR
+    '@DIM: SINGLE DIM ONLY
+    '@REF: https://regexr.com/
+    '@EXAMPLE: ArrayFilter(Array("Banana", "Coffee", "Apple"), "^Ba|^Ap") ->  [Banana,Apple]
+    
+    If ArrayDimensionLength(SourceArray) <> 1 Then
+        Err.Raise ARRAY_DIMENSION_INCORRECT, , "SourceArray must be a single dimensional array."
+    End If
     
     Dim RegEx As Object
     Set RegEx = CreateObject("vbscript.regexp")
@@ -131,7 +145,7 @@ Public Function ArrayFilter(ByVal SourceArray As Variant, ByVal RegExPattern As 
     Dim Index As Long
     For Index = LBound(SourceArray) To UBound(SourceArray)
     
-        If RegEx.Test(SourceArray(Index)) Then
+        If RegEx.TEST(SourceArray(Index)) Then
             ArrayPush ArrayFilter, SourceArray(Index)
         End If
         
@@ -142,9 +156,17 @@ End Function
 'FILTERS MULTIDIMENSIONAL ARRAY. ARGS ARE PAIR BASED: (HEADING TITLE, REGEX) https://regexr.com/ for help
 Public Function ArrayFilterTwo(ByVal SourceArray As Variant, ParamArray Args() As Variant) As Variant
     
-    'DEPENDINCES: IsValidConditions, ArrayGetConditions, RegExTest
+    '@AUTHOR: ROBERT TODAR
+    '@DIM: TWO DIM ONLY
+    '@DEPENDINCES: IsValidConditions, ArrayGetConditions, RegExTest
+    '@EXAMPLE: ArrayFilterTwo(TwoDimArray, "Name", "^R","ID", "\d{6}", ...) can add as many pair args as you'd like
     
-    'ALWAYS RETURN HEADING??
+    'THIS FUNCTION IS FOR TWO DIMS ONLY
+    If ArrayDimensionLength(SourceArray) <> 2 Then
+        Err.Raise ARRAY_DIMENSION_INCORRECT, , "SourceArray must be a two dimensional array."
+    End If
+    
+    'SHOULD I ALWAYS RETURN HEADING?? THIS ALSO ASSUMES THERE IS A HEADING...
     ArrayPushTwoDim ArrayFilterTwo, ArrayExtractRow(SourceArray, LBound(SourceArray))
     
     'GET CONDITIONS JAGGED ARRAY. (HEADING INDEX, AND REGEX CONDITION)
@@ -164,7 +186,16 @@ Public Function ArrayFilterTwo(ByVal SourceArray As Variant, ParamArray Args() A
 End Function
 
 'SUM A SINGLE DIM ARRAY
-Public Function ArraySum(SourceArray As Variant) As Double
+Public Function ArraySum(ByVal SourceArray As Variant) As Double
+    
+    '@AUTHOR: ROBERT TODAR
+    '@DIM: SINGLE DIM ONLY
+    '@EXAMPLE: ArraySum (Array(5, 6, 4, 3, 2)) -> 20
+       
+    'SINGLE DIM ARRAYS ONLY
+    If ArrayDimensionLength(SourceArray) <> 1 Then
+        Err.Raise ARRAY_DIMENSION_INCORRECT, , "SourceArray must be a 1 dimensional array."
+    End If
     
     Dim Index As Integer
     For Index = LBound(SourceArray, 1) To UBound(SourceArray, 1)
@@ -178,8 +209,13 @@ Public Function ArraySum(SourceArray As Variant) As Double
 End Function
 
 'GET AVERAGE OF SINGLE DIM ARRAY
-Public Function ArrayAverage(SourceArray As Variant) As Double
-
+Public Function ArrayAverage(ByVal SourceArray As Variant) As Double
+    
+    'SINGLE DIM ARRAYS ONLY
+    If ArrayDimensionLength(SourceArray) <> 1 Then
+        Err.Raise ARRAY_DIMENSION_INCORRECT, , "SourceArray must be a single dimensional array."
+    End If
+    
     ArrayAverage = ArraySum(SourceArray) / ArrayLength(SourceArray)
     
 End Function
@@ -195,14 +231,22 @@ End Function
 'SPREADS OUT AN ARRAY INTO A SINGLE ARRAY. EXAMPLE: JAGGED ARRAYS, dictionaries, collections.
 Public Function ArraySpread(ByVal SourceArray As Variant, Optional SpreadObjects As Boolean = False) As Variant
     
+    'THIS FUNCTION IS FOR SINGLE DIMS ONLY
+    If ArrayDimensionLength(SourceArray) <> 1 Then
+        Err.Raise ARRAY_DIMENSION_INCORRECT, , "SourceArray must be a single dimensional array."
+    End If
+    
+    'CONVERT ANY DICTIONARY OR COLLECTION INTO AN ARRAY FIRST.
     Dim Temp As Variant
     Temp = ConvertToArray(SourceArray)
     
     Dim Index As Integer
     For Index = LBound(Temp, 1) To UBound(Temp, 1)
         
+        'CHECK IF ELEMENT IS AN ARRAY OR OBJECT, RUN RECURSIVE IF SO ON THAT ELEMENT
         If IsArray(Temp(Index)) Or (IsObject(Temp(Index)) And SpreadObjects) Then
             
+            'RECURSIVE CALLS UNTIL AT BASE ELEMENTS
             Dim InnerTemp As Variant
             If SpreadObjects Then
                 InnerTemp = ArraySpread(ConvertToArray(Temp(Index)), True)
@@ -210,13 +254,15 @@ Public Function ArraySpread(ByVal SourceArray As Variant, Optional SpreadObjects
                 InnerTemp = ArraySpread(Temp(Index))
             End If
             
+            'ADD EACH ELEMENT TO THE FUNCTION ARRAY
             Dim InnerIndex As Integer
             For InnerIndex = LBound(InnerTemp, 1) To UBound(InnerTemp, 1)
                 ArrayPush ArraySpread, InnerTemp(InnerIndex)
             Next InnerIndex
             
+        'ELEMENT IS SINGLE ITEM, SIMPLY TO FUNCTION ARRAY
         Else
-        
+            
             ArrayPush ArraySpread, Temp(Index)
             
         End If
@@ -227,6 +273,7 @@ End Function
 
 'RETURNS A SINGLE DIM ARRAY OF THE INDEXES OF COLUMN HEADERS
 'HEADERS NOT FOUND RETURNS EMPTY IN THAT INDEX
+'EXPERIMENTAL CODE PART OF A BIGGER PLAN....
 Public Function ArrayGetIndexes(ByVal SourceArray As Variant, ByVal IndexArray As Variant) As Variant
     
     Dim Temp As Variant
@@ -249,6 +296,11 @@ End Function
 'CHECK TO SEE IF SINGLE DIM ARRAY CONTAINS ANY EMPTY INDEXES
 Public Function ArrayContainsEmpties(ByVal SourceArray As Variant) As Boolean
     
+    'THIS FUNCTION IS FOR SINGLE DIMS ONLY
+    If ArrayDimensionLength(SourceArray) <> 1 Then
+        Err.Raise ARRAY_DIMENSION_INCORRECT, , "SourceArray must be a single dimensional array."
+    End If
+    
     Dim Index As Integer
     For Index = LBound(SourceArray, 1) To UBound(SourceArray, 1)
         If IsEmpty(SourceArray(Index)) Then
@@ -260,6 +312,7 @@ Public Function ArrayContainsEmpties(ByVal SourceArray As Variant) As Boolean
 End Function
 
 'CHECKS TO SEE IF VALUE IS IN SINGLE DIM ARRAY. VALUE CAN BE SINGLE VALUE OR ARRAY OF VALUES.
+'NEED NOTES....
 Public Function ArrayContains(ByVal SourceArray As Variant, ByVal Value As Variant) As Boolean
     
     If IsArrayEmpty(SourceArray) Then
@@ -327,13 +380,13 @@ Public Function ArrayDimensionLength(SourceArray As Variant) As Integer
     On Error GoTo Catch
     
     Dim I As Integer
-    Dim Test As Integer
+    Dim TEST As Integer
 
     Do
         I = I + 1
         
         'WAIT FOR ERROR
-        Test = UBound(SourceArray, I)
+        TEST = UBound(SourceArray, I)
     Loop
     
 Catch:
@@ -344,6 +397,11 @@ End Function
 
 'GET A COLUMN FROM A TWO DIM ARRAY, AND RETURN A SINLGE DIM ARRAY
 Public Function ArrayExtractColumn(ByVal SourceArray As Variant, ByVal ColumnIndex As Integer) As Variant
+    
+    'SINGLE DIM ARRAYS ONLY
+    If ArrayDimensionLength(SourceArray) <> 2 Then
+        Err.Raise ARRAY_DIMENSION_INCORRECT, , "SourceArray must be a two dimensional array."
+    End If
     
     Dim Temp As Variant
     ReDim Temp(LBound(SourceArray, 1) To UBound(SourceArray, 1))
@@ -462,7 +520,7 @@ Public Function ArrayIndexOf(ByVal SourceArray As Variant, ByVal SearchElement A
     Index = -1
 End Function
 
-'EXTRACTS LIST OF GIVEN PROPERTY. ARRAY THAT CONTAINS DICTIONRIES.
+'EXTRACTS LIST OF GIVEN PROPERTY. MUST BE ARRAY THAT CONTAINS DICTIONRIES AT THIS TIME.
 Public Function ArrayPluck(ByVal SourceArray As Variant, ByVal Key As Variant) As Variant
     
     Dim Temp As Variant
@@ -517,8 +575,10 @@ Public Function ArrayPush(ByRef SourceArray As Variant, ParamArray Element() As 
     
     OptionBase = 0
 
-    '@TODO: FOR NOW THIS IS ONLY FOR SINGLE DIMENSIONS. UPDATE TO PUSH TO MULTI DIM ARRAYS?
+    'THIS IS ONLY FOR SINGLE DIMENSIONS.
     If ArrayDimensionLength(SourceArray) = 2 Then  'Or IsArray(Element(LBound(Element)))
+    
+        'THIS SECTION IS EXPERIMENTAL... ArrayPushTwoDim IS NOT YET PROVEN. REMOVE IF DESIRED.
         ArrayPush = ArrayPushTwoDim(SourceArray, CVar(Element))
         Exit Function
     End If
@@ -605,15 +665,15 @@ End Function
 
 ' CREATES TEMP TEXT FILE AND SAVES ARRAY VALUES IN A CSV FORMAT,
 ' THEN QUERIES AND RETURNS ARRAY.
-'
-'@USES ArrayToCSVFile
-'@USES ArrayFromRecordset
-'@RETURNS 2D ARRAY || EMPTY (IF NO RECORDS)
-'@PARAM {ARR} MUST BE A TWO DIMENSIONAL ARRAY, SETUP AS IF IT WERE A TABLE.
-'@PARAM {SQL} ADO SQL STATEMENT FOR A TEXT FILE. MUST INCLUDE 'FROM []'
-'@PARAM {IncludeHeaders} BOOLEAN TO RETURN HEADERS WITH DATA OR NOT
-'@EXAMPLE SQL = "SELECT * FROM [] WHERE [FIRSTNAME] = 'ROBERT'"
-Public Function ArrayQuery(SourceArray As Variant, SQL As String, Optional IncludeHeaders As Boolean = True) As Variant
+Public Function ArrayQuery(SourceArray As Variant, sql As String, Optional IncludeHeaders As Boolean = True) As Variant
+    
+    '@USES ArrayToCSVFile
+    '@USES ArrayFromRecordset
+    '@RETURNS 2D ARRAY || EMPTY (IF NO RECORDS)
+    '@PARAM {ARR} MUST BE A TWO DIMENSIONAL ARRAY, SETUP AS IF IT WERE A TABLE.
+    '@PARAM {SQL} ADO SQL STATEMENT FOR A TEXT FILE. MUST INCLUDE 'FROM []'
+    '@PARAM {IncludeHeaders} BOOLEAN TO RETURN HEADERS WITH DATA OR NOT
+    '@EXAMPLE SQL = "SELECT * FROM [] WHERE [FIRSTNAME] = 'ROBERT'"
     
     'CREATE TEMP FOLDER AND FILE NAMES
     Const FileName As String = "temp.txt"
@@ -621,7 +681,7 @@ Public Function ArrayQuery(SourceArray As Variant, SQL As String, Optional Inclu
     FilePath = Environ("temp")
     
     'UPDATE SQL WITH TEMP FILE NAME
-    SQL = Replace(SQL, "FROM []", "FROM [" & FileName & "]")
+    sql = Replace(sql, "FROM []", "FROM [" & FileName & "]")
     
     'SEND ARRAY TO TEMP TEXTFILE IN CSV FORMAT
     ArrayToCSVFile SourceArray, FilePath & "\" & FileName
@@ -638,7 +698,7 @@ Public Function ArrayQuery(SourceArray As Variant, SQL As String, Optional Inclu
     Set Rs = CreateObject("ADODB.RecordSet")
     With Rs
         .ActiveConnection = cnn
-        .Open SQL
+        .Open sql
         
         'GET AN ARRAY FROM THE RECORDSET
          ArrayQuery = ArrayFromRecordset(Rs, IncludeHeaders)
@@ -657,7 +717,7 @@ Public Function ArrayRemoveDuplicates(SourceArray As Variant) As Variant
     Dim Key As Variant
     
     If Not IsArray(SourceArray) Then
-        SourceArray = cArray(SourceArray)
+        SourceArray = ConvertToArray(SourceArray)
     End If
     
     Set Dic = CreateObject("Scripting.Dictionary")
@@ -851,25 +911,30 @@ Public Function ArrayToCSVFile(SourceArray As Variant, FilePath As String) As St
             Next RowIndex
     End Select
     
-    Dim FSO As Object
-    Set FSO = CreateObject("Scripting.FileSystemObject")
+    Dim Fso As Object
+    Set Fso = CreateObject("Scripting.FileSystemObject")
     
-    Dim ts As Object
-    Set ts = FSO.OpenTextFile(FilePath, 2, True) '2=WRITEABLE
-    ts.Write Temp
+    Dim Ts As Object
+    Set Ts = Fso.OpenTextFile(FilePath, 2, True) '2=WRITEABLE
+    Ts.Write Temp
     
-    Set ts = Nothing
-    Set FSO = Nothing
+    Set Ts = Nothing
+    Set Fso = Nothing
     
     ArrayToCSVFile = Temp
     
 End Function
 
-'RESIZE PASSED IN RANGE, AND SET VALUE EQUAL TO THE ARRAY
-Public Sub ArrayToRange(SourceArray As Variant, Optional ByRef Target As Range)
+
+'RESIZE PASSED IN EXCEL RANGE, AND SET VALUE EQUAL TO THE ARRAY
+Public Sub ArrayToRange(ByVal SourceArray As Variant, Optional ByRef Target As Excel.Range)
+
+    '@TODO: NEED TO TEST! ALSO THIS ASSUMES ROW, GIVE OPTION TO TRANSPOSE TO COLUMN??
+    'NOTE: THIS ALWAYS FORMATS THE CELLS TO BE A STRING... REMOVE FORMATING IF NEED BE.
+    '      THIS WAS CREATED FOR THE PURPOSE OF MAINTAINING LEADING ZEROS FOR MY ALL DATA...
     
+    'ADD WORKBOOK IF NOT
     Dim Wb As Workbook
-    
     If Target Is Nothing Then
         Set Wb = Workbooks.Add
         Set Target = Wb.Worksheets("Sheet1").Range("A1")
@@ -889,6 +954,7 @@ Public Sub ArrayToRange(SourceArray As Variant, Optional ByRef Target As Range)
     
     End Select
     
+    'OPTIONAL, PLEASE REMOVE IF DESIRED...
     Columns.AutoFit
     
 End Sub
@@ -930,15 +996,15 @@ End Function
 'SENDS AN ARRAY TO A TEXTFILE
 Public Sub ArrayToTextFile(Arr As Variant, FilePath As String, Optional delimeter As String = ",")
     
-    Dim FSO As Object
-    Set FSO = CreateObject("Scripting.FileSystemObject")
+    Dim Fso As Object
+    Set Fso = CreateObject("Scripting.FileSystemObject")
     
-    Dim ts As Object
-    Set ts = FSO.OpenTextFile(FilePath, 2, True) '2=WRITEABLE
-    ts.Write ArrayToString(Arr, delimeter)
+    Dim Ts As Object
+    Set Ts = Fso.OpenTextFile(FilePath, 2, True) '2=WRITEABLE
+    Ts.Write ArrayToString(Arr, delimeter)
     
-    Set ts = Nothing
-    Set FSO = Nothing
+    Set Ts = Nothing
+    Set Fso = Nothing
 
 End Sub
 
@@ -1025,7 +1091,6 @@ Public Function Assign(ByRef Variable As Variant, ByVal Value As Variant)
 End Function
 
 'CONVERT OTHER LIST OBJECTS TO AN ARRAY
-'*********READING THIS I SEE SOME MAJOR ERRORS... NOT SURE WHAT HAPPENED??
 Public Function ConvertToArray(ByRef Val As Variant) As Variant
     
     Select Case TypeName(Val)
@@ -1100,6 +1165,7 @@ End Function
 '******************************************************************************************
 
 'CHECKS CURRENT ROW OF A TWO DIM ARRAY TO SEE IF CONDITIONS ARRAY PASSES
+'HELPER FUNCTION FOR ARRAYFILTERTWO
 Private Function IsValidConditions(ByVal SourceArray As Variant, ByVal Conditions As Variant, ByVal RowIndex As Integer)
     
     'DEPENDINCES: RegExTest
@@ -1125,6 +1191,7 @@ Private Function IsValidConditions(ByVal SourceArray As Variant, ByVal Condition
 End Function
 
 'GROUPS HEADING INDEX WITH CONDITIONS. RETURNS JAGGED ARRAY.
+'HELPER FUNCTION FOR ARRAYFILTERTWO
 Private Function ArrayGetConditions(ByVal SourceArray As Variant, ByVal Arguments As Variant) As Variant
     
     'ARGUMENTS ARE PAIRED BY TWOS. (0) = COLUMN HEADING, (1) = REGEX CONDITION
@@ -1151,7 +1218,7 @@ Private Function RegExTest(ByVal Value As String, ByVal Pattern As String) As Bo
         .Pattern = Pattern
     End With
     
-    RegExTest = RegEx.Test(Value)
+    RegExTest = RegEx.TEST(Value)
     
 End Function
 
