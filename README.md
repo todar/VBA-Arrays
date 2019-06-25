@@ -1,6 +1,8 @@
 # VBA-Arrays
 A whole bunch of Array functions to make it easier and faster coding. Many functions are to try and mimic JavaScript. Example: Push, Pop, Shift, Unshift, Splice, Sort, Reverse, length, toString.
 
+> Note: also see my [Style Guide](https://github.com/todar/VBA) in how to write clean and maintainable VBA code.
+
 # Public Funtions:
 - ArrayAverage
 - ArrayContainsEmpties
