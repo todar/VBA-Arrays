@@ -374,23 +374,21 @@ End Function
 ' PUBLIC FUNCTIONS
 '******************************************************************************************
 
-'RETURNS THE LENGHT OF THE DIMENSION OF AN ARRAY
-Public Function ArrayDimensionLength(SourceArray As Variant) As Integer
+' Returns the length of the dimension of an array.
+Public Function ArrayDimensionLength(ByVal sourceArray As Variant) As Long
     
     On Error GoTo Catch
-    
-    Dim I As Integer
-    Dim TEST As Integer
-
     Do
-        I = I + 1
+        Dim boundIndex As Long
+        boundIndex = boundIndex + 1
         
-        'WAIT FOR ERROR
-        TEST = UBound(SourceArray, I)
+        ' Loop until this line errors out.
+        Dim test As Long
+        test = UBound(sourceArray, boundIndex)
     Loop
-    
 Catch:
-    ArrayDimensionLength = I - 1
+    ' Must remove one, this gives the proper dimension length.
+    ArrayDimensionLength = boundIndex - 1
 
 End Function
 
@@ -566,48 +564,47 @@ Public Function ArrayPop(ByRef SourceArray As Variant) As Variant
     
 End Function
 
-'ADDS A NEW ELEMENT(S) TO AN ARRAY (AT THE END), RETURNS THE NEW ARRAY LENGTH
-Public Function ArrayPush(ByRef SourceArray As Variant, ParamArray Element() As Variant) As Long
+' Mutates array by adding element(s) to the end of an array. Returns the new array length.
+Public Function ArrayPush(ByRef sourceArray As Variant, ParamArray elements() As Variant) As Long
+    '@author: Robert Todar <https://github.com/todar>
+    '@param: <SourceArray> must be a single dimensional array.
+    '@param: <elements> are the elementss to be added.
+    
+    ' Change this if you prefer to work with option base 1
+    Const optionBase As Long = 0
+    
+    Dim firstEmptyBound As Long
+    Select Case ArrayDimensionLength(sourceArray)
+        Case 0
+            firstEmptyBound = optionBase
+            ' Create space for new elements in empty array.
+            ReDim sourceArray(optionBase To UBound(elements, 1) + optionBase)
+        Case 1
+            firstEmptyBound = UBound(sourceArray) + 1
+            ' Add more space for new elements.
+            ReDim Preserve sourceArray( _
+                LBound(sourceArray) To UBound(sourceArray) + UBound(elements) + 1)
+        Case 2
+            'THIS SECTION IS EXPERIMENTAL... ArrayPushTwoDim IS NOT YET PROVEN. REMOVE IF DESIRED.
+            ArrayPush = ArrayPushTwoDim(sourceArray, CVar(element))
+            Exit Function
+        Case Else
+            Err.Raise 5, "ArrayPush", "ArrayPush function only works with single dimension arrays."
+    End Select
+    
+    Dim index As Long
+    For index = LBound(elements) To UBound(elements)
+        
+        ' Add elements to the end of the array. Assign is to 'set' or 'let' depending on type.
+        Assign sourceArray(firstEmptyBound), elements(index)
 
-    Dim Index As Long
-    Dim FirstEmptyBound As Long
-    Dim OptionBase As Integer
-    
-    OptionBase = 0
-
-    'THIS IS ONLY FOR SINGLE DIMENSIONS.
-    If ArrayDimensionLength(SourceArray) = 2 Then  'Or IsArray(Element(LBound(Element)))
-    
-        'THIS SECTION IS EXPERIMENTAL... ArrayPushTwoDim IS NOT YET PROVEN. REMOVE IF DESIRED.
-        ArrayPush = ArrayPushTwoDim(SourceArray, CVar(Element))
-        Exit Function
-    End If
-    
-    'REDIM IF EMPTY, OR INCREASE ARRAY IF NOT EMPTY
-    If IsArrayEmpty(SourceArray) Then
-    
-        ReDim SourceArray(OptionBase To UBound(Element, 1) + OptionBase)
-        FirstEmptyBound = LBound(SourceArray, 1)
+        ' Increment to the next empty index
+        firstEmptyBound = firstEmptyBound + 1
         
-    Else
-        FirstEmptyBound = UBound(SourceArray, 1) + 1
-        ReDim Preserve SourceArray(UBound(SourceArray, 1) + UBound(Element, 1) + 1)
-        
-    End If
+    Next index
     
-    'LOOP EACH NEW ELEMENT
-    For Index = LBound(Element, 1) To UBound(Element, 1)
-        
-        'ADD ELEMENT TO THE END OF THE ARRAY
-        Assign SourceArray(FirstEmptyBound), Element(Index)
-        
-        'INCREMENT TO THE NEXT firstEmptyBound
-        FirstEmptyBound = FirstEmptyBound + 1
-        
-    Next Index
-    
-    'RETURN NEW ARRAY LENGTH
-    ArrayPush = UBound(SourceArray, 1) + 1
+    ' Return new array length
+    ArrayPush = UBound(sourceArray) + (Int(optionBase = 0) * -1) - LBound(sourceArray)
 
 End Function
 
@@ -1079,15 +1076,14 @@ Public Function ArrayUnShift(SourceArray As Variant, ParamArray Element() As Var
     
 End Function
 
-'QUICK TOOL TO EITHER SET OR LET DEPENDING ON IF ELEMENT IS AN OBJECT
-Public Function Assign(ByRef Variable As Variant, ByVal Value As Variant)
-
+' Quick tool to either set or let depending on if the element is an object
+Public Function Assign(ByRef Variable As Variant, ByVal Value As Variant) As String
     If IsObject(Value) Then
         Set Variable = Value
     Else
         Let Variable = Value
     End If
-    
+    Assign = TypeName(Value)
 End Function
 
 'CONVERT OTHER LIST OBJECTS TO AN ARRAY
@@ -1116,44 +1112,29 @@ Public Function ConvertToArray(ByRef Val As Variant) As Variant
     
 End Function
 
-Public Function IsArrayEmpty(Arr As Variant) As Boolean
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-' CPEARSON
-' This function tests whether the array is empty (unallocated). Returns TRUE or FALSE.
-'
-' The VBA IsArray function indicates whether a variable is an array, but it does not
-' distinguish between allocated and unallocated arrays. It will return TRUE for both
-' allocated and unallocated arrays. This function tests whether the array has actually
-' been allocated.
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' This function tests whether the array has actually been allocated.
+Public Function IsArrayEmpty(ByRef sourceArray As Variant) As Boolean
+    'a modified version of cpearsons code <http://www.cpearson.com/excel/VBAArrays.htm>
 
-    Err.Clear
-    On Error Resume Next
-    If IsArray(Arr) = False Then
-        ' we weren't passed an array, return True
+    ' Array was not passed in.
+    If Not IsArray(sourceArray) Then
         IsArrayEmpty = True
+        Exit Function
     End If
 
     ' Attempt to get the UBound of the array. If the array is
     ' unallocated, an error will occur.
-    Dim ub As Long
-    ub = UBound(Arr, 1)
-    If (Err.Number <> 0) Then
+    Err.Clear
+    On Error Resume Next
+    If Not IsNumeric(UBound(sourceArray)) And (Err.Number <> 0) Then
         IsArrayEmpty = True
     Else
-        ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-        ' On rare occasion, under circumstances I cannot reliably replicate, Err.Number
-        ' will be 0 for an unallocated, empty array. On these occasions, LBound is 0 and
-        ' UBound is -1. To accommodate the weird behavior, test to see if LB > UB.
-        ' If so, the array is not allocated.
-        ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+        ' On rare occasion Err.Number will be 0 for an unallocated, empty array.
+        ' On these occasions, LBound is 0 and UBound is -1.
+        ' To accommodate the weird behavior, test to see if LB > UB. If so, the array is not allocated.
         Err.Clear
-        Dim LB As Long
-        LB = LBound(Arr)
-        If LB > ub Then
+        If LBound(sourceArray) > UBound(sourceArray) Then
             IsArrayEmpty = True
-        Else
-            IsArrayEmpty = False
         End If
     End If
 
