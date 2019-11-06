@@ -6,11 +6,12 @@ A whole bunch of Array functions to make it easier and faster coding. Many funct
 
 ## Other Helpful Resources
 
-- [www.roberttodar.com](https://www.roberttodar.com/) - About me and my background and some of my other projects.
-- [VBA Style Guide](https://github.com/todar/VBA-Style-Guide) - A guide for writing clean VBA code. Notes on how to take notes =)
-- [VBA Boilerplate](https://github.com/todar/VBA-Boilerplate) - Boilerplate that contains a bunch of helper libraries such as JSON tools, Code Analytics, LocalStorage, Unit Testing, version control and local network distribution, userform events, and more!
-- [VBA Strings](https://github.com/todar/VBA-Strings) - String function library. `ToString`, `Inject`, `StringSimilarity`, and more.
-- [VBA Userform Event Listener](https://github.com/todar/VBA-Userform-EventListener) - Listen to events such as `mouseover`, `mouseout`, `focus`, `blur`, and more.
+- [www.roberttodar.com](https://www.roberttodar.com/) About me and my background and some of my other projects.
+- [Style Guide](https://github.com/todar/VBA-Style-Guide) A guide for writing clean VBA code. Notes on how to take notes =)
+- [Boilerplate](https://github.com/todar/VBA-Boilerplate) Boilerplate that contains a bunch of helper libraries such as JSON tools, Code Analytics, LocalStorage, Unit Testing, version control and local network distribution, userform events, and more!
+- [Strings](https://github.com/todar/VBA-Strings) String function library. `ToString`, `Inject`, `StringSimilarity`, and more.
+- [Analytics](https://github.com/todar/VBA-Analytics) Way of tracking code analytics and metrics. Useful when multiple users are running code within a shared network.
+- [Userform EventListener](https://github.com/todar/VBA-Userform-EventListener) Listen to events such as `mouseover`, `mouseout`, `focus`, `blur`, and more.
 
 ---
 
