@@ -2,6 +2,8 @@
 
 A whole bunch of Array functions to make it easier and faster coding. Many functions are to try and mimic JavaScript. Example: Push, Pop, Shift, Unshift, Splice, Sort, Reverse, length, toString.
 
+<a href="https://www.buymeacoffee.com/todar" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>
+
 ---
 
 ## Other Helpful Resources
