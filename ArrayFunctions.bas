@@ -791,6 +791,91 @@ Public Function ArraySort(SourceArray As Variant) As Variant
 
 End Function
 
+'SORT AN ARRAY [SINGLE DIMENSION - FASTER]
+'in this method we consider the array begins at 0, empty positions will be on the begining of the final array
+Function arraySorterSDim(ByVal RecArray As Variant) As Variant
+Dim Menor As String
+Dim NewArray() As Variant
+Dim i As Double, j As Double
+Dim menorIndex As Double
+Dim NewArrayIndex() As Double
+Dim UsedIndex() As Double
+ReDim NewArrayIndex(UBound(RecArray))
+ReDim NewArray(UBound(RecArray))
+For i = 0 To UBound(NewArrayIndex)
+    NewArrayIndex(i) = -1
+Next i
+UsedIndex = NewArrayIndex 'get the dimension
+For i = 0 To UBound(RecArray)
+    Menor = ""
+    menorIndex = -1
+    For j = 0 To UBound(RecArray)
+        If UsedIndex(j) = -1 Then
+            If Menor = "" Then
+                Menor = RecArray(j)
+                menorIndex = j
+            Else
+                If RecArray(j) < Menor Then
+                    Menor = RecArray(j)
+                    menorIndex = j
+                End If
+            End If
+        End If
+    Next j
+    UsedIndex(menorIndex) = 1
+    NewArrayIndex(i) = menorIndex
+Next i
+For i = 0 To UBound(NewArrayIndex)
+    NewArray(i) = RecArray(NewArrayIndex(i))
+    'Debug.Print NewArray(i)
+Next i
+arraySorterSDim = NewArray
+End Function
+
+'SORT AN ARRAY [2 DIM WITH ONE COL AS REFERENCE TO SORT (if you need two or more columns as reference,
+'you can make a dummy col concatenating other columns and use it as reference)
+Function ArraySorter(ByVal RecArray As Variant, Optional ByVal RefCol As Integer = 0) As Variant
+Dim Menor As String
+Dim NewArray() As Variant
+Dim i As Double, j As Double
+Dim menorIndex As Double
+Dim NewArrayIndex() As Double
+Dim UsedIndex() As Double
+ReDim NewArrayIndex(UBound(RecArray, 2))
+ReDim NewArray(UBound(RecArray), UBound(RecArray, 2))
+For i = 0 To UBound(NewArrayIndex)
+    NewArrayIndex(i) = -1
+Next i
+UsedIndex = NewArrayIndex
+For i = 0 To UBound(RecArray, 2)
+    Menor = ""
+    menorIndex = -1
+    For j = 0 To UBound(RecArray, 2)
+        If UsedIndex(j) = -1 Then
+            If Menor = "" Then
+                Menor = RecArray(RefCol, j)
+                menorIndex = j
+            Else
+                If RecArray(ColNumber, j) < Menor Then
+                    Menor = RecArray(ColNumber, j)
+                    menorIndex = j
+                End If
+            End If
+        End If
+    Next j
+    UsedIndex(menorIndex) = 1
+    NewArrayIndex(i) = menorIndex
+Next i
+For i = 0 To UBound(NewArrayIndex)
+    For j = 0 To UBound(NewArray)
+        NewArray(j, i) = RecArray(j, NewArrayIndex(i))
+    Next j
+Next i
+ArraySorter = NewArray
+End Function
+
+
+
 'CHANGES THE CONTENTS OF AN ARRAY BY REMOVING OR REPLACING EXISTING ELEMENTS AND/OR ADDING NEW ELEMENTS.
 Public Function ArraySplice(SourceArray As Variant, Where As Long, HowManyRemoved As Integer, ParamArray Element() As Variant) As Variant
     
